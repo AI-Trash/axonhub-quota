@@ -29,20 +29,12 @@ export function TokenUsageCard({ usage }: TokenUsageCardProps) {
             </Badge>
             <Badge variant="outline" className="justify-between rounded-md px-2 py-1">
               <span>{t.tokenUsage.totalCost}</span>
-              <span className="tabular-nums">
-                {usage.costAvailable && usage.cost !== null
-                  ? formatCost(usage.cost, locale)
-                  : t.dashboard.costUnavailable}
-              </span>
+              <span className="tabular-nums">{usage.costAvailable && usage.cost !== null ? formatCost(usage.cost, locale) : "—"}</span>
             </Badge>
           </div>
           <Separator />
           <p>{t.dashboard.exactTotal(formatNumber(usage.totalTokens, locale))}</p>
-          <p>
-            {usage.costAvailable && usage.cost !== null
-              ? t.dashboard.exactCost(formatCost(usage.cost, locale))
-              : t.dashboard.costUnavailable}
-          </p>
+          {usage.costAvailable && usage.cost !== null ? <p>{t.dashboard.exactCost(formatCost(usage.cost, locale))}</p> : null}
         </div>
       }
     />

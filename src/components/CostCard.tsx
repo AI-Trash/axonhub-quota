@@ -15,7 +15,7 @@ export function CostCard({ usage }: CostCardProps) {
     <MetricCard
       title={t.cost.title}
       description={t.cost.description}
-      value={usage.costAvailable && usage.cost !== null ? formatCost(usage.cost, locale) : t.dashboard.costUnavailable}
+      value={usage.costAvailable && usage.cost !== null ? formatCost(usage.cost, locale) : "—"}
       icon={<DollarSign className="size-4 text-muted-foreground" />}
     />
   )

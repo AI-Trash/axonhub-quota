@@ -23,19 +23,17 @@ export function ScopedStatsCard({ scopeLabel, stats }: ScopedStatsCardProps) {
       icon={<CalendarRange className="size-4 text-muted-foreground" />}
       footer={
         <div className="space-y-3 text-xs text-muted-foreground">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <Badge variant="outline" className="justify-between rounded-md px-2 py-1">
               <span>{t.tokenUsage.totalLabel}</span>
               <span className="tabular-nums">{formatNumber(stats.totalTokens, locale)}</span>
             </Badge>
-            <Badge variant="outline" className="justify-between rounded-md px-2 py-1">
-              <span>{t.tokenUsage.totalCost}</span>
-              <span className="tabular-nums">
-                {stats.costAvailable && stats.cost !== null
-                  ? formatCost(stats.cost, locale)
-                  : t.dashboard.costUnavailable}
-              </span>
-            </Badge>
+            {stats.costAvailable && stats.cost !== null ? (
+              <Badge variant="outline" className="justify-between rounded-md px-2 py-1">
+                <span>{t.tokenUsage.totalCost}</span>
+                <span className="tabular-nums">{formatCost(stats.cost, locale)}</span>
+              </Badge>
+            ) : null}
           </div>
           <Separator />
           <p>
@@ -45,11 +43,9 @@ export function ScopedStatsCard({ scopeLabel, stats }: ScopedStatsCardProps) {
             )}
           </p>
           <p>{t.dashboard.exactTotal(formatNumber(stats.totalTokens, locale))}</p>
-          <p>
-            {stats.costAvailable && stats.cost !== null
-              ? t.dashboard.exactCost(formatCost(stats.cost, locale))
-              : t.dashboard.costUnavailable}
-          </p>
+          {stats.costAvailable && stats.cost !== null ? (
+            <p>{t.dashboard.exactCost(formatCost(stats.cost, locale))}</p>
+          ) : null}
         </div>
       }
     />

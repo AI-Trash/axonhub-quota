@@ -79,13 +79,8 @@ function calculateCacheRate(inputTokens: number, cachedTokens: number): number {
   return (cachedTokens / inputTokens) * 100
 }
 
-function calculateTotalTokens(
-  inputTokens: number,
-  outputTokens: number,
-  cachedTokens: number,
-  reasoningTokens: number,
-) {
-  return inputTokens + outputTokens + cachedTokens + reasoningTokens
+function calculateTotalTokens(inputTokens: number, outputTokens: number) {
+  return inputTokens + outputTokens
 }
 
 function createUsageSummary(totalTokens: number, cost: number | null, costAvailable: boolean): UsageSummary {
@@ -237,22 +232,16 @@ export class AxonHubAdminClient {
     const totalTokens = calculateTotalTokens(
       totalUsageStat?.inputTokens ?? 0,
       totalUsageStat?.outputTokens ?? 0,
-      totalUsageStat?.cachedTokens ?? 0,
-      totalUsageStat?.reasoningTokens ?? 0,
     )
 
     const todayTotalTokens = calculateTotalTokens(
       todayUsage?.inputTokens ?? 0,
       todayUsage?.outputTokens ?? 0,
-      todayUsage?.cachedTokens ?? 0,
-      todayUsage?.reasoningTokens ?? 0,
     )
 
     const weekTotalTokens = calculateTotalTokens(
       weekUsage?.inputTokens ?? 0,
       weekUsage?.outputTokens ?? 0,
-      weekUsage?.cachedTokens ?? 0,
-      weekUsage?.reasoningTokens ?? 0,
     )
 
     const dailyUsage: UsageChartPoint[] = dailyUsageData.map((dailyUsage, index) => {
@@ -261,8 +250,6 @@ export class AxonHubAdminClient {
       const totalTokens = calculateTotalTokens(
         usage?.inputTokens ?? 0,
         usage?.outputTokens ?? 0,
-        usage?.cachedTokens ?? 0,
-        usage?.reasoningTokens ?? 0,
       )
 
       return {

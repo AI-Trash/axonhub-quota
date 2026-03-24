@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react"
-import { Circle, LogOut, RefreshCw } from "lucide-react"
+import { lazy, Suspense, useEffect, useState } from "react"
+import { Circle, LogOut } from "lucide-react"
 
 import type { ConnectionConfig } from "@/api/types"
 import { CacheRateCard } from "@/components/CacheRateCard"
 import { CostCard } from "@/components/CostCard"
 import { LanguageToggle } from "@/components/LanguageToggle"
 import { QuotaCard } from "@/components/QuotaCard"
+import { ScopedStatsCard } from "@/components/ScopedStatsCard"
 import { TokenUsageCard } from "@/components/TokenUsageCard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,25 @@ import { useLanguage } from "@/lib/i18n"
 interface DashboardProps {
   connection: ConnectionConfig
   onDisconnect: () => void
+}
+
+const TokenTrendChart = lazy(async () => {
+  const module = await import("@/components/TokenTrendChart")
+  return { default: module.TokenTrendChart }
+})
+
+const EMPTY_SCOPED_STATS = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedTokens: 0,
+  reasoningTokens: 0,
+  totalTokens: 0,
+  cacheRate: 0,
+  window: {
+    start: new Date(0).toISOString(),
+    end: new Date(0).toISOString(),
+    timezone: "UTC",
+  },
 }
 
 function LoadingCard() {
@@ -35,10 +55,23 @@ function LoadingCard() {
   )
 }
 
+function ChartSkeleton() {
+  return (
+    <Card className="border-border/70 md:col-span-2 xl:col-span-4">
+      <CardHeader className="space-y-2">
+        <Skeleton className="h-4 w-1/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-[320px] w-full" />
+      </CardContent>
+    </Card>
+  )
+}
+
 export function Dashboard({ connection, onDisconnect }: DashboardProps) {
   const { t } = useLanguage()
-  const { metrics, isLoading, error, refresh, refreshIntervalMs } =
-    useDashboardData(connection)
+  const { metrics, isLoading, error, refreshIntervalMs } = useDashboardData(connection)
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -75,10 +108,6 @@ export function Dashboard({ connection, onDisconnect }: DashboardProps) {
 
           <div className="flex items-center gap-2">
             <LanguageToggle />
-            <Button variant="outline" onClick={() => void refresh()}>
-              <RefreshCw className="size-4" />
-              {t.actions.refresh}
-            </Button>
             <Button variant="ghost" onClick={onDisconnect}>
               <LogOut className="size-4" />
               {t.actions.disconnect}
@@ -104,6 +133,17 @@ export function Dashboard({ connection, onDisconnect }: DashboardProps) {
               cacheRate={metrics?.cacheRate ?? 0}
               tokenStat={metrics?.tokenStat ?? null}
             />
+            <ScopedStatsCard
+              scopeLabel={t.dashboard.todayScope}
+              stats={metrics?.scoped.today ?? EMPTY_SCOPED_STATS}
+            />
+            <ScopedStatsCard
+              scopeLabel={t.dashboard.weekScope}
+              stats={metrics?.scoped.week ?? EMPTY_SCOPED_STATS}
+            />
+            <Suspense fallback={<ChartSkeleton />}>
+              <TokenTrendChart data={metrics?.chart.dailyTokens ?? []} />
+            </Suspense>
           </>
         )}
       </main>

@@ -4,7 +4,7 @@ import { fetchMetrics } from "@/api/client"
 import type { ConnectionConfig, DashboardMetrics } from "@/api/types"
 import { useLanguage } from "@/lib/i18n"
 
-const REFRESH_INTERVAL_MS = 30_000
+const REFRESH_INTERVAL_MS = 60_000
 
 interface DashboardDataState {
   metrics: DashboardMetrics | null
@@ -79,7 +79,6 @@ export function useDashboardData(connection: ConnectionConfig | null) {
     metrics: state.metrics,
     isLoading: state.isLoading,
     error: state.error,
-    refresh,
     refreshIntervalMs: REFRESH_INTERVAL_MS,
   }
 }

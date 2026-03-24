@@ -13,20 +13,6 @@ export const API_KEYS_QUERY = `
   }
 `
 
-export const TOKEN_STATS_BY_API_KEY_QUERY = `
-  query TokenStatsByApiKey {
-    tokenStatsByAPIKey {
-      apiKeyId
-      apiKeyName
-      inputTokens
-      outputTokens
-      cachedTokens
-      reasoningTokens
-      totalTokens
-    }
-  }
-`
-
 export const COST_STATS_BY_API_KEY_QUERY = `
   query CostStatsByApiKey {
     costStatsByAPIKey {

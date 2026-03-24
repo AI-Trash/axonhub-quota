@@ -51,20 +51,6 @@ export interface ApiKeysQueryVariables {
   first: number
 }
 
-export interface TokenStat {
-  apiKeyId: string
-  apiKeyName: string
-  inputTokens: number
-  outputTokens: number
-  cachedTokens: number
-  reasoningTokens: number
-  totalTokens: number
-}
-
-export interface TokenStatsByApiKeyQueryData {
-  tokenStatsByAPIKey: TokenStat[]
-}
-
 export interface ScopedWindow {
   start: string
   end: string

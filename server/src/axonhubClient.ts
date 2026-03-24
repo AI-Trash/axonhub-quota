@@ -4,7 +4,6 @@ import {
   API_KEY_QUOTA_USAGES_QUERY,
   API_KEY_TOKEN_USAGE_STATS_QUERY,
   COST_STATS_BY_API_KEY_QUERY,
-  TOKEN_STATS_BY_API_KEY_QUERY,
 } from "./queries"
 import type {
   APIKeyTokenUsageStatsInput,
@@ -20,7 +19,6 @@ import type {
   GraphQLResponse,
   SignInRequest,
   SignInResponse,
-  TokenStatsByApiKeyQueryData,
   UsageChartPoint,
   UsageSummary,
   ScopedUsageSummary,
@@ -195,9 +193,13 @@ export class AxonHubAdminClient {
       }
     })
 
-    const [tokenStatsData, costStatsData, quotaUsagesData, todayUsageData, weekUsageData, ...dailyUsageData] =
+    const [totalUsageData, costStatsData, quotaUsagesData, todayUsageData, weekUsageData, ...dailyUsageData] =
       await Promise.all([
-      this.graphqlRequest<TokenStatsByApiKeyQueryData, Record<string, never>>(TOKEN_STATS_BY_API_KEY_QUERY),
+      this.graphqlRequest<APIKeyTokenUsageStatsQueryData, TokenUsageVariables>(API_KEY_TOKEN_USAGE_STATS_QUERY, {
+        input: {
+          apiKeyIds: [apiKeyNode.id],
+        },
+      }),
       this.graphqlRequest<CostStatsByApiKeyQueryData, Record<string, never>>(COST_STATS_BY_API_KEY_QUERY),
       this.graphqlRequest<ApiKeyQuotaUsagesQueryData, QuotaVariables>(API_KEY_QUOTA_USAGES_QUERY, {
         apiKeyId: apiKeyNode.id,
@@ -227,10 +229,17 @@ export class AxonHubAdminClient {
       ),
     ])
 
-    const tokenStat = tokenStatsData.tokenStatsByAPIKey.find((item) => item.apiKeyId === apiKeyNode.id) ?? null
+    const totalUsageStat = totalUsageData.apiKeyTokenUsageStats[0]
     const costStat = costStatsData.costStatsByAPIKey.find((item) => item.apiKeyId === apiKeyNode.id) ?? null
     const todayUsage = todayUsageData.apiKeyTokenUsageStats[0]
     const weekUsage = weekUsageData.apiKeyTokenUsageStats[0]
+
+    const totalTokens = calculateTotalTokens(
+      totalUsageStat?.inputTokens ?? 0,
+      totalUsageStat?.outputTokens ?? 0,
+      totalUsageStat?.cachedTokens ?? 0,
+      totalUsageStat?.reasoningTokens ?? 0,
+    )
 
     const todayTotalTokens = calculateTotalTokens(
       todayUsage?.inputTokens ?? 0,
@@ -265,13 +274,13 @@ export class AxonHubAdminClient {
       }
     })
 
-    const totalUsage = createUsageSummary(tokenStat?.totalTokens ?? 0, costStat?.cost ?? null, costStat !== null)
+    const totalUsage = createUsageSummary(totalTokens, costStat?.cost ?? null, costStat !== null)
     const todaySummary = createUsageSummary(todayTotalTokens, null, false)
     const weekSummary = createUsageSummary(weekTotalTokens, null, false)
 
     return {
       quotaUsages: quotaUsagesData.apiKeyQuotaUsages,
-      cacheRate: calculateCacheRate(tokenStat?.inputTokens ?? 0, tokenStat?.cachedTokens ?? 0),
+      cacheRate: calculateCacheRate(totalUsageStat?.inputTokens ?? 0, totalUsageStat?.cachedTokens ?? 0),
       usage: {
         total: totalUsage,
         today: toScopedUsageSummary(todaySummary, {

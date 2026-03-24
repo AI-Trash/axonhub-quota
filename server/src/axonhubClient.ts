@@ -9,6 +9,7 @@ import type {
   ApiKeyNode,
   ApiKeyQuotaUsagesQueryData,
   ApiKeysQueryData,
+  ApiKeysQueryVariables,
   AppConfig,
   CostStatsByApiKeyQueryData,
   DashboardMetrics,
@@ -77,9 +78,12 @@ function isSignInResponse(value: unknown): value is SignInResponse {
   }
 
   return (
-    typeof value.user.id === "string" &&
+    isRecord(value.user.id) &&
+    typeof value.user.id.type === "string" &&
+    (typeof value.user.id.id === "string" || typeof value.user.id.id === "number") &&
     typeof value.user.email === "string" &&
-    typeof value.user.name === "string"
+    typeof value.user.firstName === "string" &&
+    typeof value.user.lastName === "string"
   )
 }
 
@@ -90,7 +94,9 @@ export class AxonHubAdminClient {
   constructor(private readonly config: AppConfig) {}
 
   async fetchDashboardMetrics(apiKey: string): Promise<DashboardMetrics> {
-    const apiKeysData = await this.graphqlRequest<ApiKeysQueryData, Record<string, never>>(API_KEYS_QUERY)
+    const apiKeysData = await this.graphqlRequest<ApiKeysQueryData, ApiKeysQueryVariables>(API_KEYS_QUERY, {
+      first: 500,
+    })
     const apiKeyNode = apiKeysData.apiKeys.edges.find((edge) => edge.node.key === apiKey)?.node ?? null
 
     if (!apiKeyNode) {

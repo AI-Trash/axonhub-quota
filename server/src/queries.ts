@@ -1,6 +1,6 @@
 export const API_KEYS_QUERY = `
-  query ApiKeys {
-    apiKeys {
+  query ApiKeys($first: Int!) {
+    apiKeys(first: $first) {
       edges {
         node {
           id

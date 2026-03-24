@@ -4,9 +4,13 @@ export interface SignInRequest {
 }
 
 export interface SignInUser {
-  id: string
+  id: {
+    type: string
+    id: number | string
+  }
   email: string
-  name: string
+  firstName: string
+  lastName: string
 }
 
 export interface SignInResponse {
@@ -41,6 +45,10 @@ export interface ApiKeysQueryData {
       node: ApiKeyNode
     }>
   }
+}
+
+export interface ApiKeysQueryVariables {
+  first: number
 }
 
 export interface TokenStat {

@@ -44,23 +44,23 @@ const translations = {
     dashboard: {
       lastUpdated: (seconds: number, intervalSeconds: number) =>
         `上次更新：${seconds} 秒前 · 每 ${intervalSeconds} 秒自动刷新`,
-      scopedDescription: "所选 API Key 的时间窗口统计",
+      usageDescription: "所选 API Key 的业务用量概览",
       todayScope: "今日",
       weekScope: "近 7 天",
       window: (start: string, end: string) => `窗口：${start} — ${end}`,
-      exactTotal: (total: string) => `精确总量：${total}`,
+      exactTotal: (total: string) => `精确用量：${total}`,
+      exactCost: (cost: string) => `精确费用：${cost}`,
+      costUnavailable: "费用暂不可用",
     },
     tokenUsage: {
-      title: "总 Token 用量",
-      description: "当前 API Key 的全部流量",
-      input: "输入",
-      output: "输出",
-      cached: "缓存",
-      reasoning: "推理",
+      title: "总用量",
+      description: "所选 API Key 的累计 Token 与费用",
+      totalLabel: "累计用量",
+      totalCost: "累计费用",
     },
     cost: {
       title: "总费用",
-      description: "该 API Key 的计费使用量",
+      description: "当前仅提供累计精确费用",
     },
     quota: {
       title: "配额限制",
@@ -81,8 +81,11 @@ const translations = {
     },
     chart: {
       title: "7 日 Token 趋势",
-      description: "按日查看输入、输出与缓存 Token 变化",
+      description: "按日查看总用量变化，悬停可见费用是否可用",
       dayLabel: "日期",
+      usageSeries: "用量",
+      costLabel: "费用",
+      costUnavailable: "该时间范围费用暂不可用",
     },
   },
   en: {
@@ -117,23 +120,23 @@ const translations = {
     dashboard: {
       lastUpdated: (seconds: number, intervalSeconds: number) =>
         `Last updated: ${seconds} seconds ago · Auto-refresh every ${intervalSeconds}s`,
-      scopedDescription: "Time-window statistics for the selected API key",
+      usageDescription: "Business-friendly usage overview for the selected API key",
       todayScope: "Today",
       weekScope: "Last 7 days",
       window: (start: string, end: string) => `Window: ${start} — ${end}`,
-      exactTotal: (total: string) => `Exact total: ${total}`,
+      exactTotal: (total: string) => `Exact usage: ${total}`,
+      exactCost: (cost: string) => `Exact cost: ${cost}`,
+      costUnavailable: "Cost unavailable",
     },
     tokenUsage: {
-      title: "Total token usage",
-      description: "All traffic for the selected API key",
-      input: "Input",
-      output: "Output",
-      cached: "Cached",
-      reasoning: "Reasoning",
+      title: "Total usage",
+      description: "Cumulative tokens and cost for the selected API key",
+      totalLabel: "Total usage",
+      totalCost: "Total cost",
     },
     cost: {
       title: "Total cost",
-      description: "Billed usage for this API key",
+      description: "Only the exact all-time cost is currently available",
     },
     quota: {
       title: "Quota limit",
@@ -154,8 +157,11 @@ const translations = {
     },
     chart: {
       title: "7-day token trend",
-      description: "Daily input, output, and cached token movement",
+      description: "Daily total usage with honest cost availability on hover",
       dayLabel: "Date",
+      usageSeries: "Usage",
+      costLabel: "Cost",
+      costUnavailable: "Cost unavailable for this time range",
     },
   },
 } as const

@@ -1,6 +1,6 @@
-import type { TokenChartPoint } from "@/api/types"
+import type { UsageChartPoint } from "@/api/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCompactNumber, formatNumber } from "@/lib/format"
+import { formatCompactNumber, formatCost, formatNumber } from "@/lib/format"
 import { useLanguage } from "@/lib/i18n"
 import {
   Bar,
@@ -14,7 +14,7 @@ import {
 } from "recharts"
 
 interface TokenTrendChartProps {
-  data: TokenChartPoint[]
+  data: UsageChartPoint[]
 }
 
 export function TokenTrendChart({ data }: TokenTrendChartProps) {
@@ -68,28 +68,27 @@ export function TokenTrendChart({ data }: TokenTrendChartProps) {
                   backgroundColor: "var(--card)",
                   borderRadius: "var(--radius)",
                 }}
-                formatter={(value, name) => [formatTooltipValue(value), name]}
+                formatter={(value, name, item) => {
+                  const payload = item.payload as UsageChartPoint | undefined
+
+                  if (name === t.chart.usageSeries) {
+                    return [formatTooltipValue(value), name]
+                  }
+
+                  if (!payload?.costAvailable || payload.cost === null) {
+                    return [t.chart.costUnavailable, t.chart.costLabel]
+                  }
+
+                  return [formatCost(payload.cost, locale), t.chart.costLabel]
+                }}
                 labelFormatter={(label) => `${t.chart.dayLabel}: ${label}`}
               />
               <Legend />
               <Bar
-                dataKey="inputTokens"
-                name={t.tokenUsage.input}
-                stackId="tokens"
+                dataKey="totalTokens"
+                name={t.chart.usageSeries}
                 fill="var(--chart-1)"
                 radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="outputTokens"
-                name={t.tokenUsage.output}
-                stackId="tokens"
-                fill="var(--chart-2)"
-              />
-              <Bar
-                dataKey="cachedTokens"
-                name={t.tokenUsage.cached}
-                stackId="tokens"
-                fill="var(--chart-3)"
               />
             </ComposedChart>
           </ResponsiveContainer>

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react"
 import { Circle, LogOut } from "lucide-react"
 
-import type { ConnectionConfig } from "@/api/types"
+import type { ConnectionConfig, ScopedUsageSummary } from "@/api/types"
 import { CacheRateCard } from "@/components/CacheRateCard"
 import { CostCard } from "@/components/CostCard"
 import { LanguageToggle } from "@/components/LanguageToggle"
@@ -26,13 +26,10 @@ const TokenTrendChart = lazy(async () => {
   return { default: module.TokenTrendChart }
 })
 
-const EMPTY_SCOPED_STATS = {
-  inputTokens: 0,
-  outputTokens: 0,
-  cachedTokens: 0,
-  reasoningTokens: 0,
+const EMPTY_SCOPED_STATS: ScopedUsageSummary = {
   totalTokens: 0,
-  cacheRate: 0,
+  cost: null,
+  costAvailable: false,
   window: {
     start: new Date(0).toISOString(),
     end: new Date(0).toISOString(),
@@ -126,23 +123,20 @@ export function Dashboard({ connection, onDisconnect }: DashboardProps) {
           </>
         ) : (
           <>
-            <TokenUsageCard tokenStat={metrics?.tokenStat ?? null} />
-            <CostCard costStat={metrics?.costStat ?? null} />
+            <TokenUsageCard usage={metrics?.usage.total ?? { totalTokens: 0, cost: null, costAvailable: false }} />
+            <CostCard usage={metrics?.usage.total ?? { totalTokens: 0, cost: null, costAvailable: false }} />
             <QuotaCard quotaUsages={metrics?.quotaUsages ?? []} />
-            <CacheRateCard
-              cacheRate={metrics?.cacheRate ?? 0}
-              tokenStat={metrics?.tokenStat ?? null}
-            />
+            <CacheRateCard cacheRate={metrics?.cacheRate ?? 0} />
             <ScopedStatsCard
               scopeLabel={t.dashboard.todayScope}
-              stats={metrics?.scoped.today ?? EMPTY_SCOPED_STATS}
+              stats={metrics?.usage.today ?? EMPTY_SCOPED_STATS}
             />
             <ScopedStatsCard
               scopeLabel={t.dashboard.weekScope}
-              stats={metrics?.scoped.week ?? EMPTY_SCOPED_STATS}
+              stats={metrics?.usage.week ?? EMPTY_SCOPED_STATS}
             />
             <Suspense fallback={<ChartSkeleton />}>
-              <TokenTrendChart data={metrics?.chart.dailyTokens ?? []} />
+              <TokenTrendChart data={metrics?.chart.dailyUsage ?? []} />
             </Suspense>
           </>
         )}

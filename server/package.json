@@ -1,5 +1,5 @@
 {
-  "name": "axonhub-dashboard-server",
+  "name": "axonhub-quota-server",
   "private": true,
   "version": "1.0.0",
   "description": "Express proxy backend for the AxonHub dashboard",

@@ -123,16 +123,12 @@ export function Dashboard({ connection, onDisconnect }: DashboardProps) {
         ) : (
           <>
             <TokenUsageCard usage={metrics?.usage.total ?? { totalTokens: 0, cost: null, costAvailable: false }} />
+            <ScopedStatsCard
+              today={metrics?.usage.today ?? EMPTY_SCOPED_STATS}
+              week={metrics?.usage.week ?? EMPTY_SCOPED_STATS}
+            />
             <QuotaCard quotaUsages={metrics?.quotaUsages ?? []} />
             <CacheRateCard cacheRate={metrics?.cacheRate ?? 0} />
-            <ScopedStatsCard
-              scopeLabel={t.dashboard.todayScope}
-              stats={metrics?.usage.today ?? EMPTY_SCOPED_STATS}
-            />
-            <ScopedStatsCard
-              scopeLabel={t.dashboard.weekScope}
-              stats={metrics?.usage.week ?? EMPTY_SCOPED_STATS}
-            />
             <Suspense fallback={<ChartSkeleton />}>
               <TokenTrendChart data={metrics?.chart.dailyUsage ?? []} />
             </Suspense>

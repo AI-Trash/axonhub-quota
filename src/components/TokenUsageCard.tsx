@@ -13,12 +13,13 @@ interface TokenUsageCardProps {
 
 export function TokenUsageCard({ usage }: TokenUsageCardProps) {
   const { locale, t } = useLanguage()
+  const totalCostLabel = usage.costAvailable && usage.cost !== null ? formatCost(usage.cost, locale) : "—"
 
   return (
     <MetricCard
       title={t.tokenUsage.title}
-      description={t.tokenUsage.description}
-      value={formatCompactNumber(usage.totalTokens, locale)}
+      description={t.dashboard.totalsDescription}
+      value={`${formatCompactNumber(usage.totalTokens, locale)} / ${totalCostLabel}`}
       icon={<Coins className="size-4 text-muted-foreground" />}
       className="xl:col-span-2"
       footer={
@@ -30,7 +31,7 @@ export function TokenUsageCard({ usage }: TokenUsageCardProps) {
             </Badge>
             <Badge variant="outline" className="justify-between rounded-md px-2 py-1">
               <span>{t.tokenUsage.totalCost}</span>
-              <span className="tabular-nums">{usage.costAvailable && usage.cost !== null ? formatCost(usage.cost, locale) : "—"}</span>
+              <span className="tabular-nums">{totalCostLabel}</span>
             </Badge>
           </div>
           <Separator />

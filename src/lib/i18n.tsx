@@ -54,7 +54,7 @@ const translations = {
       exactCost: (cost: string) => `精确费用：${cost}`,
     },
     tokenUsage: {
-      title: "总用量与费用",
+      title: "总用量/总费用",
       description: "所选 API Key 的累计 Token 与精确费用",
       totalLabel: "累计用量",
       totalCost: "累计费用",

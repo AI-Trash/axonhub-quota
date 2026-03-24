@@ -9,31 +9,24 @@ function isDashboardMetrics(value: unknown): value is DashboardMetrics {
     return false
   }
 
-  const { tokenStat, costStat, quotaUsages, cacheRate, scoped, chart, fetchedAt } = value
+  const { quotaUsages, cacheRate, usage, chart, fetchedAt } = value
 
-  const hasNullableObject =
-    tokenStat === null || isObject(tokenStat)
-
-  const hasNullableCostObject =
-    costStat === null || isObject(costStat)
-
-  const hasScopedMetrics =
-    isObject(scoped) &&
-    isObject(scoped.today) &&
-    isObject(scoped.week) &&
-    isObject(scoped.today.window) &&
-    isObject(scoped.week.window)
+  const hasUsageMetrics =
+    isObject(usage) &&
+    isObject(usage.total) &&
+    isObject(usage.today) &&
+    isObject(usage.week) &&
+    isObject(usage.today.window) &&
+    isObject(usage.week.window)
 
   const hasChartMetrics =
     isObject(chart) &&
-    Array.isArray(chart.dailyTokens)
+    Array.isArray(chart.dailyUsage)
 
   return (
-    hasNullableObject &&
-    hasNullableCostObject &&
     Array.isArray(quotaUsages) &&
     typeof cacheRate === "number" &&
-    hasScopedMetrics &&
+    hasUsageMetrics &&
     hasChartMetrics &&
     typeof fetchedAt === "number"
   )

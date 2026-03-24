@@ -1,42 +1,22 @@
-export interface TokenStat {
-  apiKeyId: string
-  apiKeyName: string
-  inputTokens: number
-  outputTokens: number
-  cachedTokens: number
-  reasoningTokens: number
-  totalTokens: number
-}
-
-export interface CostStat {
-  apiKeyId: string
-  apiKeyName: string
-  cost: number
-}
-
-export interface TokenBreakdown {
-  inputTokens: number
-  outputTokens: number
-  cachedTokens: number
-  reasoningTokens: number
-  totalTokens: number
-}
-
 export interface ScopedWindow {
   start: string
   end: string
   timezone: string
 }
 
-export interface ScopedTokenStats extends TokenBreakdown {
-  cacheRate: number
+export interface UsageSummary {
+  totalTokens: number
+  cost: number | null
+  costAvailable: boolean
+}
+
+export interface ScopedUsageSummary extends UsageSummary {
   window: ScopedWindow
 }
 
-export interface TokenChartPoint extends TokenBreakdown {
+export interface UsageChartPoint extends UsageSummary {
   date: string
   label: string
-  cacheRate: number
 }
 
 export interface QuotaPeriod {
@@ -69,16 +49,15 @@ export interface ApiKeyQuotaUsage {
 }
 
 export interface DashboardMetrics {
-  tokenStat: TokenStat | null
-  costStat: CostStat | null
   quotaUsages: ApiKeyQuotaUsage[]
   cacheRate: number
-  scoped: {
-    today: ScopedTokenStats
-    week: ScopedTokenStats
+  usage: {
+    total: UsageSummary
+    today: ScopedUsageSummary
+    week: ScopedUsageSummary
   }
   chart: {
-    dailyTokens: TokenChartPoint[]
+    dailyUsage: UsageChartPoint[]
   }
   fetchedAt: number
 }

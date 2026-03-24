@@ -9,7 +9,6 @@ import {
 import type {
   APIKeyTokenUsageStatsInput,
   APIKeyTokenUsageStatsQueryData,
-  ApiKeyNode,
   ApiKeyQuotaUsagesQueryData,
   ApiKeysQueryData,
   ApiKeysQueryVariables,
@@ -19,12 +18,12 @@ import type {
   GraphQLError,
   GraphQLRequest,
   GraphQLResponse,
-  ScopedTokenStats,
   SignInRequest,
   SignInResponse,
-  TokenBreakdown,
-  TokenChartPoint,
   TokenStatsByApiKeyQueryData,
+  UsageChartPoint,
+  UsageSummary,
+  ScopedUsageSummary,
 } from "./types"
 
 interface JwtCache {
@@ -82,18 +81,20 @@ function calculateCacheRate(inputTokens: number, cachedTokens: number): number {
   return (cachedTokens / inputTokens) * 100
 }
 
-function createTokenBreakdown(
+function calculateTotalTokens(
   inputTokens: number,
   outputTokens: number,
   cachedTokens: number,
   reasoningTokens: number,
-): TokenBreakdown {
+) {
+  return inputTokens + outputTokens + cachedTokens + reasoningTokens
+}
+
+function createUsageSummary(totalTokens: number, cost: number | null, costAvailable: boolean): UsageSummary {
   return {
-    inputTokens,
-    outputTokens,
-    cachedTokens,
-    reasoningTokens,
-    totalTokens: inputTokens + outputTokens + cachedTokens + reasoningTokens,
+    totalTokens,
+    cost,
+    costAvailable,
   }
 }
 
@@ -129,13 +130,12 @@ function getDateWindow(days: number, timezone: string): { start: Date; end: Date
   }
 }
 
-function toScopedTokenStats(
-  breakdown: TokenBreakdown,
+function toScopedUsageSummary(
+  summary: UsageSummary,
   window: { start: Date; end: Date; timezone: string },
-): ScopedTokenStats {
+): ScopedUsageSummary {
   return {
-    ...breakdown,
-    cacheRate: calculateCacheRate(breakdown.inputTokens, breakdown.cachedTokens),
+    ...summary,
     window: {
       start: window.start.toISOString(),
       end: window.end.toISOString(),
@@ -232,24 +232,24 @@ export class AxonHubAdminClient {
     const todayUsage = todayUsageData.apiKeyTokenUsageStats[0]
     const weekUsage = weekUsageData.apiKeyTokenUsageStats[0]
 
-    const todayBreakdown = createTokenBreakdown(
+    const todayTotalTokens = calculateTotalTokens(
       todayUsage?.inputTokens ?? 0,
       todayUsage?.outputTokens ?? 0,
       todayUsage?.cachedTokens ?? 0,
       todayUsage?.reasoningTokens ?? 0,
     )
 
-    const weekBreakdown = createTokenBreakdown(
+    const weekTotalTokens = calculateTotalTokens(
       weekUsage?.inputTokens ?? 0,
       weekUsage?.outputTokens ?? 0,
       weekUsage?.cachedTokens ?? 0,
       weekUsage?.reasoningTokens ?? 0,
     )
 
-    const dailyTokens: TokenChartPoint[] = dailyUsageData.map((dailyUsage, index) => {
+    const dailyUsage: UsageChartPoint[] = dailyUsageData.map((dailyUsage, index) => {
       const usage = dailyUsage.apiKeyTokenUsageStats[0]
       const window = dailyWindows[index]
-      const breakdown = createTokenBreakdown(
+      const totalTokens = calculateTotalTokens(
         usage?.inputTokens ?? 0,
         usage?.outputTokens ?? 0,
         usage?.cachedTokens ?? 0,
@@ -259,28 +259,32 @@ export class AxonHubAdminClient {
       return {
         date: formatDateKey(window.start, timezone),
         label: formatDateLabel(window.start, timezone),
-        ...breakdown,
-        cacheRate: calculateCacheRate(breakdown.inputTokens, breakdown.cachedTokens),
+        totalTokens,
+        cost: null,
+        costAvailable: false,
       }
     })
 
+    const totalUsage = createUsageSummary(tokenStat?.totalTokens ?? 0, costStat?.cost ?? null, costStat !== null)
+    const todaySummary = createUsageSummary(todayTotalTokens, null, false)
+    const weekSummary = createUsageSummary(weekTotalTokens, null, false)
+
     return {
-      tokenStat,
-      costStat,
       quotaUsages: quotaUsagesData.apiKeyQuotaUsages,
       cacheRate: calculateCacheRate(tokenStat?.inputTokens ?? 0, tokenStat?.cachedTokens ?? 0),
-      scoped: {
-        today: toScopedTokenStats(todayBreakdown, {
+      usage: {
+        total: totalUsage,
+        today: toScopedUsageSummary(todaySummary, {
           ...todayWindow,
           timezone,
         }),
-        week: toScopedTokenStats(weekBreakdown, {
+        week: toScopedUsageSummary(weekSummary, {
           ...weekWindow,
           timezone,
         }),
       },
       chart: {
-        dailyTokens,
+        dailyUsage,
       },
       fetchedAt: Date.now(),
     }

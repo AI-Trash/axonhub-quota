@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import type { ConnectionConfig } from "@/api/types"
 import { fetchMetrics } from "@/api/client"
 
-const STORAGE_KEY = "axonhub-dashboard-api-key"
+const STORAGE_KEY = "axonhub-quota-api-key"
 
 export interface ConnectInput {
   apiKey: string

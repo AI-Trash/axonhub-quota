@@ -1,18 +1,16 @@
 import { Gauge } from "lucide-react"
 
-import type { TokenStat } from "@/api/types"
 import { MetricCard } from "@/components/MetricCard"
 import { Progress } from "@/components/ui/progress"
-import { formatCompactNumber, formatPercent } from "@/lib/format"
+import { formatPercent } from "@/lib/format"
 import { useLanguage } from "@/lib/i18n"
 
 interface CacheRateCardProps {
   cacheRate: number
-  tokenStat: TokenStat | null
 }
 
-export function CacheRateCard({ cacheRate, tokenStat }: CacheRateCardProps) {
-  const { locale, t } = useLanguage()
+export function CacheRateCard({ cacheRate }: CacheRateCardProps) {
+  const { t } = useLanguage()
   return (
     <MetricCard
       title={t.cacheRate.title}
@@ -22,12 +20,7 @@ export function CacheRateCard({ cacheRate, tokenStat }: CacheRateCardProps) {
       footer={
         <div className="space-y-2">
           <Progress value={Math.min(100, cacheRate)} />
-          <p className="text-xs text-muted-foreground">
-            {t.cacheRate.summary(
-              formatCompactNumber(tokenStat?.cachedTokens ?? 0, locale),
-              formatCompactNumber(tokenStat?.inputTokens ?? 0, locale),
-            )}
-          </p>
+          <p className="text-xs text-muted-foreground">{t.cacheRate.description}</p>
         </div>
       }
     />

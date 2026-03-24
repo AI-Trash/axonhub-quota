@@ -1,21 +1,21 @@
 import { DollarSign } from "lucide-react"
 
-import type { CostStat } from "@/api/types"
+import type { UsageSummary } from "@/api/types"
 import { MetricCard } from "@/components/MetricCard"
 import { formatCost } from "@/lib/format"
 import { useLanguage } from "@/lib/i18n"
 
 interface CostCardProps {
-  costStat: CostStat | null
+  usage: UsageSummary
 }
 
-export function CostCard({ costStat }: CostCardProps) {
+export function CostCard({ usage }: CostCardProps) {
   const { locale, t } = useLanguage()
   return (
     <MetricCard
       title={t.cost.title}
       description={t.cost.description}
-      value={formatCost(costStat?.cost ?? 0, locale)}
+      value={usage.costAvailable && usage.cost !== null ? formatCost(usage.cost, locale) : t.dashboard.costUnavailable}
       icon={<DollarSign className="size-4 text-muted-foreground" />}
     />
   )

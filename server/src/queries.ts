@@ -61,3 +61,15 @@ export const API_KEY_QUOTA_USAGES_QUERY = `
     }
   }
 `
+
+export const API_KEY_TOKEN_USAGE_STATS_QUERY = `
+  query ApiKeyTokenUsageStats($input: APIKeyTokenUsageStatsInput) {
+    apiKeyTokenUsageStats(input: $input) {
+      apiKeyId
+      inputTokens
+      outputTokens
+      cachedTokens
+      reasoningTokens
+    }
+  }
+`

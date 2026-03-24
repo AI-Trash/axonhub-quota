@@ -65,6 +65,49 @@ export interface TokenStatsByApiKeyQueryData {
   tokenStatsByAPIKey: TokenStat[]
 }
 
+export interface TokenBreakdown {
+  inputTokens: number
+  outputTokens: number
+  cachedTokens: number
+  reasoningTokens: number
+  totalTokens: number
+}
+
+export interface ScopedWindow {
+  start: string
+  end: string
+  timezone: string
+}
+
+export interface ScopedTokenStats extends TokenBreakdown {
+  cacheRate: number
+  window: ScopedWindow
+}
+
+export interface TokenChartPoint extends TokenBreakdown {
+  date: string
+  label: string
+  cacheRate: number
+}
+
+export interface APIKeyTokenUsageStat {
+  apiKeyId: string
+  inputTokens: number
+  outputTokens: number
+  cachedTokens: number
+  reasoningTokens: number
+}
+
+export interface APIKeyTokenUsageStatsQueryData {
+  apiKeyTokenUsageStats: APIKeyTokenUsageStat[]
+}
+
+export interface APIKeyTokenUsageStatsInput {
+  apiKeyIds: string[]
+  createdAtGTE?: string
+  createdAtLTE?: string
+}
+
 export interface CostStat {
   apiKeyId: string
   apiKeyName: string
@@ -113,6 +156,13 @@ export interface DashboardMetrics {
   costStat: CostStat | null
   quotaUsages: ApiKeyQuotaUsage[]
   cacheRate: number
+  scoped: {
+    today: ScopedTokenStats
+    week: ScopedTokenStats
+  }
+  chart: {
+    dailyTokens: TokenChartPoint[]
+  }
   fetchedAt: number
 }
 

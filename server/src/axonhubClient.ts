@@ -2,10 +2,13 @@ import { HttpError } from "./errors"
 import {
   API_KEYS_QUERY,
   API_KEY_QUOTA_USAGES_QUERY,
+  API_KEY_TOKEN_USAGE_STATS_QUERY,
   COST_STATS_BY_API_KEY_QUERY,
   TOKEN_STATS_BY_API_KEY_QUERY,
 } from "./queries"
 import type {
+  APIKeyTokenUsageStatsInput,
+  APIKeyTokenUsageStatsQueryData,
   ApiKeyNode,
   ApiKeyQuotaUsagesQueryData,
   ApiKeysQueryData,
@@ -16,8 +19,11 @@ import type {
   GraphQLError,
   GraphQLRequest,
   GraphQLResponse,
+  ScopedTokenStats,
   SignInRequest,
   SignInResponse,
+  TokenBreakdown,
+  TokenChartPoint,
   TokenStatsByApiKeyQueryData,
 } from "./types"
 
@@ -28,6 +34,10 @@ interface JwtCache {
 
 interface QuotaVariables {
   apiKeyId: string
+}
+
+interface TokenUsageVariables {
+  input: APIKeyTokenUsageStatsInput
 }
 
 type UnknownRecord = Record<string, unknown>
@@ -72,6 +82,68 @@ function calculateCacheRate(inputTokens: number, cachedTokens: number): number {
   return (cachedTokens / inputTokens) * 100
 }
 
+function createTokenBreakdown(
+  inputTokens: number,
+  outputTokens: number,
+  cachedTokens: number,
+  reasoningTokens: number,
+): TokenBreakdown {
+  return {
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+    reasoningTokens,
+    totalTokens: inputTokens + outputTokens + cachedTokens + reasoningTokens,
+  }
+}
+
+function formatDateLabel(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    month: "numeric",
+    day: "numeric",
+  }).format(date)
+}
+
+function formatDateKey(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date)
+}
+
+function getDateWindow(days: number, timezone: string): { start: Date; end: Date } {
+  const now = new Date()
+  const end = new Date(now)
+  const start = new Date(now)
+
+  start.setDate(start.getDate() - (days - 1))
+  start.setHours(0, 0, 0, 0)
+  end.setHours(23, 59, 59, 999)
+
+  return {
+    start,
+    end,
+  }
+}
+
+function toScopedTokenStats(
+  breakdown: TokenBreakdown,
+  window: { start: Date; end: Date; timezone: string },
+): ScopedTokenStats {
+  return {
+    ...breakdown,
+    cacheRate: calculateCacheRate(breakdown.inputTokens, breakdown.cachedTokens),
+    window: {
+      start: window.start.toISOString(),
+      end: window.end.toISOString(),
+      timezone: window.timezone,
+    },
+  }
+}
+
 function isSignInResponse(value: unknown): value is SignInResponse {
   if (!isRecord(value) || typeof value.token !== "string" || !isRecord(value.user)) {
     return false
@@ -103,22 +175,113 @@ export class AxonHubAdminClient {
       throw new HttpError(404, "API key not found")
     }
 
-    const [tokenStatsData, costStatsData, quotaUsagesData] = await Promise.all([
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+    const todayWindow = getDateWindow(1, timezone)
+    const weekWindow = getDateWindow(7, timezone)
+    const dailyWindows = Array.from({ length: 7 }, (_, index) => {
+      const daysAgo = 6 - index
+      const date = new Date()
+      date.setDate(date.getDate() - daysAgo)
+      date.setHours(0, 0, 0, 0)
+
+      const start = new Date(date)
+      const end = new Date(date)
+      end.setHours(23, 59, 59, 999)
+
+      return {
+        start,
+        end,
+        timezone,
+      }
+    })
+
+    const [tokenStatsData, costStatsData, quotaUsagesData, todayUsageData, weekUsageData, ...dailyUsageData] =
+      await Promise.all([
       this.graphqlRequest<TokenStatsByApiKeyQueryData, Record<string, never>>(TOKEN_STATS_BY_API_KEY_QUERY),
       this.graphqlRequest<CostStatsByApiKeyQueryData, Record<string, never>>(COST_STATS_BY_API_KEY_QUERY),
       this.graphqlRequest<ApiKeyQuotaUsagesQueryData, QuotaVariables>(API_KEY_QUOTA_USAGES_QUERY, {
         apiKeyId: apiKeyNode.id,
       }),
+      this.graphqlRequest<APIKeyTokenUsageStatsQueryData, TokenUsageVariables>(API_KEY_TOKEN_USAGE_STATS_QUERY, {
+        input: {
+          apiKeyIds: [apiKeyNode.id],
+          createdAtGTE: todayWindow.start.toISOString(),
+          createdAtLTE: todayWindow.end.toISOString(),
+        },
+      }),
+      this.graphqlRequest<APIKeyTokenUsageStatsQueryData, TokenUsageVariables>(API_KEY_TOKEN_USAGE_STATS_QUERY, {
+        input: {
+          apiKeyIds: [apiKeyNode.id],
+          createdAtGTE: weekWindow.start.toISOString(),
+          createdAtLTE: weekWindow.end.toISOString(),
+        },
+      }),
+      ...dailyWindows.map((window) =>
+        this.graphqlRequest<APIKeyTokenUsageStatsQueryData, TokenUsageVariables>(API_KEY_TOKEN_USAGE_STATS_QUERY, {
+          input: {
+            apiKeyIds: [apiKeyNode.id],
+            createdAtGTE: window.start.toISOString(),
+            createdAtLTE: window.end.toISOString(),
+          },
+        }),
+      ),
     ])
 
     const tokenStat = tokenStatsData.tokenStatsByAPIKey.find((item) => item.apiKeyId === apiKeyNode.id) ?? null
     const costStat = costStatsData.costStatsByAPIKey.find((item) => item.apiKeyId === apiKeyNode.id) ?? null
+    const todayUsage = todayUsageData.apiKeyTokenUsageStats[0]
+    const weekUsage = weekUsageData.apiKeyTokenUsageStats[0]
+
+    const todayBreakdown = createTokenBreakdown(
+      todayUsage?.inputTokens ?? 0,
+      todayUsage?.outputTokens ?? 0,
+      todayUsage?.cachedTokens ?? 0,
+      todayUsage?.reasoningTokens ?? 0,
+    )
+
+    const weekBreakdown = createTokenBreakdown(
+      weekUsage?.inputTokens ?? 0,
+      weekUsage?.outputTokens ?? 0,
+      weekUsage?.cachedTokens ?? 0,
+      weekUsage?.reasoningTokens ?? 0,
+    )
+
+    const dailyTokens: TokenChartPoint[] = dailyUsageData.map((dailyUsage, index) => {
+      const usage = dailyUsage.apiKeyTokenUsageStats[0]
+      const window = dailyWindows[index]
+      const breakdown = createTokenBreakdown(
+        usage?.inputTokens ?? 0,
+        usage?.outputTokens ?? 0,
+        usage?.cachedTokens ?? 0,
+        usage?.reasoningTokens ?? 0,
+      )
+
+      return {
+        date: formatDateKey(window.start, timezone),
+        label: formatDateLabel(window.start, timezone),
+        ...breakdown,
+        cacheRate: calculateCacheRate(breakdown.inputTokens, breakdown.cachedTokens),
+      }
+    })
 
     return {
       tokenStat,
       costStat,
       quotaUsages: quotaUsagesData.apiKeyQuotaUsages,
       cacheRate: calculateCacheRate(tokenStat?.inputTokens ?? 0, tokenStat?.cachedTokens ?? 0),
+      scoped: {
+        today: toScopedTokenStats(todayBreakdown, {
+          ...todayWindow,
+          timezone,
+        }),
+        week: toScopedTokenStats(weekBreakdown, {
+          ...weekWindow,
+          timezone,
+        }),
+      },
+      chart: {
+        dailyTokens,
+      },
       fetchedAt: Date.now(),
     }
   }

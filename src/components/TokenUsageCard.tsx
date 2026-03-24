@@ -20,6 +20,7 @@ export function TokenUsageCard({ usage }: TokenUsageCardProps) {
       description={t.tokenUsage.description}
       value={formatCompactNumber(usage.totalTokens, locale)}
       icon={<Coins className="size-4 text-muted-foreground" />}
+      className="xl:col-span-2"
       footer={
         <div className="space-y-3 text-xs text-muted-foreground">
           <div className="grid grid-cols-2 gap-2">

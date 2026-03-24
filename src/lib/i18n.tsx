@@ -50,7 +50,6 @@ const translations = {
       window: (start: string, end: string) => `窗口：${start} — ${end}`,
       exactTotal: (total: string) => `精确用量：${total}`,
       exactCost: (cost: string) => `精确费用：${cost}`,
-      costUnavailable: "费用暂不可用",
     },
     tokenUsage: {
       title: "总用量",
@@ -81,11 +80,10 @@ const translations = {
     },
     chart: {
       title: "7 日 Token 趋势",
-      description: "按日查看总用量变化，悬停可见费用是否可用",
+      description: "按日查看总用量变化",
       dayLabel: "日期",
       usageSeries: "用量",
       costLabel: "费用",
-      costUnavailable: "该时间范围费用暂不可用",
     },
   },
   en: {
@@ -126,7 +124,6 @@ const translations = {
       window: (start: string, end: string) => `Window: ${start} — ${end}`,
       exactTotal: (total: string) => `Exact usage: ${total}`,
       exactCost: (cost: string) => `Exact cost: ${cost}`,
-      costUnavailable: "Cost unavailable",
     },
     tokenUsage: {
       title: "Total usage",
@@ -157,11 +154,10 @@ const translations = {
     },
     chart: {
       title: "7-day token trend",
-      description: "Daily total usage with honest cost availability on hover",
+      description: "Daily total usage",
       dayLabel: "Date",
       usageSeries: "Usage",
       costLabel: "Cost",
-      costUnavailable: "Cost unavailable for this time range",
     },
   },
 } as const

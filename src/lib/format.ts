@@ -24,7 +24,7 @@ export function formatCompactNumber(value: number, locale: AppLocale = DEFAULT_L
   }
 
   const compactValue = value / unit.threshold
-  const maximumFractionDigits = Math.abs(compactValue) >= 100 ? 0 : 1
+  const maximumFractionDigits = Math.abs(compactValue) >= 100 ? 2 : 2
   const formattedValue = new Intl.NumberFormat(resolveIntlLocale(locale), {
     minimumFractionDigits: 0,
     maximumFractionDigits,

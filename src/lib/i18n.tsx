@@ -45,6 +45,8 @@ const translations = {
       lastUpdated: (seconds: number, intervalSeconds: number) =>
         `上次更新：${seconds} 秒前 · 每 ${intervalSeconds} 秒自动刷新`,
       usageDescription: "所选 API Key 的业务用量概览",
+      totalsDescription: "累计总用量与精确总费用",
+      recentDescription: "今日与近 7 天的用量对比",
       todayScope: "今日",
       weekScope: "近 7 天",
       window: (start: string, end: string) => `窗口：${start} — ${end}`,
@@ -119,6 +121,8 @@ const translations = {
       lastUpdated: (seconds: number, intervalSeconds: number) =>
         `Last updated: ${seconds} seconds ago · Auto-refresh every ${intervalSeconds}s`,
       usageDescription: "Business-friendly usage overview for the selected API key",
+      totalsDescription: "Cumulative total usage and exact total cost",
+      recentDescription: "Today versus last 7 days usage",
       todayScope: "Today",
       weekScope: "Last 7 days",
       window: (start: string, end: string) => `Window: ${start} — ${end}`,

@@ -5,6 +5,7 @@ import { MetricCard } from "@/components/MetricCard"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatCost, formatNumber } from "@/lib/format"
+import { useLanguage } from "@/lib/i18n"
 
 interface QuotaCardProps {
   quotaUsages: ApiKeyQuotaUsage[]
@@ -35,11 +36,13 @@ function QuotaProgressRow({
   usage,
   limit,
   formatter,
+  unlimitedLabel,
 }: {
   label: string
   usage: number
   limit: number | null
   formatter: (value: number) => string
+  unlimitedLabel: string
 }) {
   const percent = toPercent(usage, limit)
   const progressColorClass = getProgressIndicatorClass(percent)
@@ -50,7 +53,7 @@ function QuotaProgressRow({
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{label}</span>
         <span className="tabular-nums">
-          {hasLimit ? `${formatter(usage)} / ${formatter(limit)}` : `${formatter(usage)} / Unlimited`}
+          {hasLimit ? `${formatter(usage)} / ${formatter(limit)}` : `${formatter(usage)} / ${unlimitedLabel}`}
         </span>
       </div>
       <Progress value={percent} className={progressColorClass} />
@@ -59,13 +62,14 @@ function QuotaProgressRow({
 }
 
 export function QuotaCard({ quotaUsages }: QuotaCardProps) {
+  const { intlLocale, locale, t } = useLanguage()
   const primaryQuota = quotaUsages[0] ?? null
 
   return (
     <MetricCard
-      title="Quota limit"
-      description={primaryQuota ? `${primaryQuota.profileName} · ${primaryQuota.quota.period.type}` : "No quota profile found"}
-      value={primaryQuota ? `${quotaUsages.length} active profile${quotaUsages.length > 1 ? "s" : ""}` : "No data"}
+      title={t.quota.title}
+      description={primaryQuota ? `${primaryQuota.profileName} · ${primaryQuota.quota.period.type}` : t.quota.noProfileFound}
+      value={primaryQuota ? t.quota.activeProfiles(quotaUsages.length) : t.quota.noData}
       icon={<BarChart3 className="size-4 text-muted-foreground" />}
       footer={
         primaryQuota ? (
@@ -85,31 +89,34 @@ export function QuotaCard({ quotaUsages }: QuotaCardProps) {
                 className="space-y-3"
               >
                 <QuotaProgressRow
-                  label="Requests"
+                  label={t.quota.requests}
                   usage={quotaUsage.usage.requestCount}
                   limit={quotaUsage.quota.requests}
-                  formatter={formatNumber}
+                  formatter={(value) => formatNumber(value, locale)}
+                  unlimitedLabel={t.quota.unlimited}
                 />
                 <QuotaProgressRow
-                  label="Tokens"
+                  label={t.quota.tokens}
                   usage={quotaUsage.usage.totalTokens}
                   limit={quotaUsage.quota.totalTokens}
-                  formatter={formatNumber}
+                  formatter={(value) => formatNumber(value, locale)}
+                  unlimitedLabel={t.quota.unlimited}
                 />
                 <QuotaProgressRow
-                  label="Cost"
+                  label={t.quota.usageCost}
                   usage={quotaUsage.usage.totalCost}
                   limit={quotaUsage.quota.cost}
-                  formatter={formatCost}
+                  formatter={(value) => formatCost(value, locale)}
+                  unlimitedLabel={t.quota.unlimited}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Window: {new Date(quotaUsage.window.start).toLocaleString()} — {new Date(quotaUsage.window.end).toLocaleString()}
+                  {t.quota.window}: {new Date(quotaUsage.window.start).toLocaleString(intlLocale)} — {new Date(quotaUsage.window.end).toLocaleString(intlLocale)}
                 </p>
               </TabsContent>
             ))}
           </Tabs>
         ) : (
-          <p className="text-xs text-muted-foreground">Quota usage is not available for this API key yet.</p>
+          <p className="text-xs text-muted-foreground">{t.quota.noUsage}</p>
         )
       }
     />

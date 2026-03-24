@@ -5,41 +5,43 @@ import { MetricCard } from "@/components/MetricCard"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { formatNumber } from "@/lib/format"
+import { useLanguage } from "@/lib/i18n"
 
 interface TokenUsageCardProps {
   tokenStat: TokenStat | null
 }
 
 export function TokenUsageCard({ tokenStat }: TokenUsageCardProps) {
+  const { locale, t } = useLanguage()
   const totalTokens = tokenStat?.totalTokens ?? 0
 
   return (
     <MetricCard
-      title="Total token usage"
-      description="All traffic for the selected API key"
-      value={formatNumber(totalTokens)}
+      title={t.tokenUsage.title}
+      description={t.tokenUsage.description}
+      value={formatNumber(totalTokens, locale)}
       icon={<Coins className="size-4 text-muted-foreground" />}
       footer={
         <div className="space-y-3 text-xs text-muted-foreground">
           <div className="grid grid-cols-2 gap-2">
             <Badge variant="outline" className="justify-between rounded-md px-2 py-1">
-              <span>Input</span>
-              <span className="tabular-nums">{formatNumber(tokenStat?.inputTokens ?? 0)}</span>
+              <span>{t.tokenUsage.input}</span>
+              <span className="tabular-nums">{formatNumber(tokenStat?.inputTokens ?? 0, locale)}</span>
             </Badge>
             <Badge variant="outline" className="justify-between rounded-md px-2 py-1">
-              <span>Output</span>
-              <span className="tabular-nums">{formatNumber(tokenStat?.outputTokens ?? 0)}</span>
+              <span>{t.tokenUsage.output}</span>
+              <span className="tabular-nums">{formatNumber(tokenStat?.outputTokens ?? 0, locale)}</span>
             </Badge>
           </div>
           <Separator />
           <div className="grid grid-cols-2 gap-2">
             <Badge variant="secondary" className="justify-between rounded-md px-2 py-1">
-              <span>Cached</span>
-              <span className="tabular-nums">{formatNumber(tokenStat?.cachedTokens ?? 0)}</span>
+              <span>{t.tokenUsage.cached}</span>
+              <span className="tabular-nums">{formatNumber(tokenStat?.cachedTokens ?? 0, locale)}</span>
             </Badge>
             <Badge variant="secondary" className="justify-between rounded-md px-2 py-1">
-              <span>Reasoning</span>
-              <span className="tabular-nums">{formatNumber(tokenStat?.reasoningTokens ?? 0)}</span>
+              <span>{t.tokenUsage.reasoning}</span>
+              <span className="tabular-nums">{formatNumber(tokenStat?.reasoningTokens ?? 0, locale)}</span>
             </Badge>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Circle, LogOut, RefreshCw } from "lucide-react"
 import type { ConnectionConfig } from "@/api/types"
 import { CacheRateCard } from "@/components/CacheRateCard"
 import { CostCard } from "@/components/CostCard"
+import { LanguageToggle } from "@/components/LanguageToggle"
 import { QuotaCard } from "@/components/QuotaCard"
 import { TokenUsageCard } from "@/components/TokenUsageCard"
 import { Badge } from "@/components/ui/badge"
@@ -12,6 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDashboardData } from "@/hooks/useDashboardData"
+import { useLanguage } from "@/lib/i18n"
 
 interface DashboardProps {
   connection: ConnectionConfig
@@ -34,6 +36,7 @@ function LoadingCard() {
 }
 
 export function Dashboard({ connection, onDisconnect }: DashboardProps) {
+  const { t } = useLanguage()
   const { metrics, isLoading, error, refresh, refreshIntervalMs } =
     useDashboardData(connection)
   const [now, setNow] = useState(() => Date.now())
@@ -63,21 +66,22 @@ export function Dashboard({ connection, onDisconnect }: DashboardProps) {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Circle className="size-2 fill-emerald-500 text-emerald-500" />
-              <Badge variant="outline">Connected</Badge>
+              <Badge variant="outline">{t.actions.connected}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              {`Last updated: ${liveElapsedSeconds} seconds ago · Auto-refresh every ${Math.floor(refreshIntervalMs / 1000)}s`}
+              {t.dashboard.lastUpdated(liveElapsedSeconds, Math.floor(refreshIntervalMs / 1000))}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             <Button variant="outline" onClick={() => void refresh()}>
               <RefreshCw className="size-4" />
-              Refresh
+              {t.actions.refresh}
             </Button>
             <Button variant="ghost" onClick={onDisconnect}>
               <LogOut className="size-4" />
-              Disconnect
+              {t.actions.disconnect}
             </Button>
           </div>
         </div>

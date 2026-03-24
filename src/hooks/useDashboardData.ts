@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import { fetchMetrics } from "@/api/client"
 import type { ConnectionConfig, DashboardMetrics } from "@/api/types"
+import { useLanguage } from "@/lib/i18n"
 
 const REFRESH_INTERVAL_MS = 30_000
 
@@ -12,6 +13,7 @@ interface DashboardDataState {
 }
 
 export function useDashboardData(connection: ConnectionConfig | null) {
+  const { t } = useLanguage()
   const [state, setState] = useState<DashboardDataState>({
     metrics: null,
     isLoading: true,
@@ -47,10 +49,10 @@ export function useDashboardData(connection: ConnectionConfig | null) {
       setState((currentState) => ({
         ...currentState,
         isLoading: false,
-        error: error instanceof Error ? error.message : "Failed to fetch dashboard data",
+        error: error instanceof Error ? error.message : t.errors.failedToFetchDashboardData,
       }))
     }
-  }, [connection])
+  }, [connection, t.errors.failedToFetchDashboardData])
 
   useEffect(() => {
     if (intervalRef.current !== null) {

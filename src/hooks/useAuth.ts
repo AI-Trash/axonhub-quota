@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { ConnectionConfig } from "@/api/types"
 import { fetchMetrics } from "@/api/client"
+import { useLanguage } from "@/lib/i18n"
 
 const STORAGE_KEY = "axonhub-quota-api-key"
 
@@ -30,6 +31,7 @@ function clearStoredApiKey() {
 }
 
 export function useAuth() {
+  const { t } = useLanguage()
   const [state, setState] = useState<UseAuthState>({
     connection: null,
     isConnecting: false,
@@ -58,7 +60,7 @@ export function useAuth() {
     const apiKey = input.apiKey.trim()
 
     if (!apiKey) {
-      setError("Please enter your API key")
+      setError(t.errors.enterApiKey)
       return false
     }
 
@@ -90,12 +92,12 @@ export function useAuth() {
         ...currentState,
         isConnecting: false,
         isRestoring: false,
-        error: error instanceof Error ? error.message : "Failed to connect",
+        error: error instanceof Error ? error.message : t.errors.failedToConnect,
       }))
 
       return false
     }
-  }, [setError])
+  }, [setError, t.errors.enterApiKey, t.errors.failedToConnect])
 
   const restore = useCallback(async () => {
     const storedApiKey = loadStoredApiKey()
@@ -127,11 +129,11 @@ export function useAuth() {
         isRestoring: false,
         error:
           error instanceof Error
-            ? `Stored session expired: ${error.message}`
-            : "Stored session expired",
+            ? `${t.errors.storedSessionExpired}: ${error.message}`
+            : t.errors.storedSessionExpired,
       })
     }
-  }, [])
+  }, [t.errors.storedSessionExpired])
 
   useEffect(() => {
     void restore()

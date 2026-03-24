@@ -4,6 +4,7 @@ import type { TokenStat } from "@/api/types"
 import { MetricCard } from "@/components/MetricCard"
 import { Progress } from "@/components/ui/progress"
 import { formatNumber, formatPercent } from "@/lib/format"
+import { useLanguage } from "@/lib/i18n"
 
 interface CacheRateCardProps {
   cacheRate: number
@@ -11,17 +12,21 @@ interface CacheRateCardProps {
 }
 
 export function CacheRateCard({ cacheRate, tokenStat }: CacheRateCardProps) {
+  const { locale, t } = useLanguage()
   return (
     <MetricCard
-      title="Cache rate"
-      description="Cached tokens compared to total tokens"
+      title={t.cacheRate.title}
+      description={t.cacheRate.description}
       value={formatPercent(cacheRate)}
       icon={<Gauge className="size-4 text-muted-foreground" />}
       footer={
         <div className="space-y-2">
           <Progress value={Math.min(100, cacheRate)} />
           <p className="text-xs text-muted-foreground">
-            {`${formatNumber(tokenStat?.cachedTokens ?? 0)} cached of ${formatNumber(tokenStat?.totalTokens ?? 0)} total`}
+            {t.cacheRate.summary(
+              formatNumber(tokenStat?.cachedTokens ?? 0, locale),
+              formatNumber(tokenStat?.inputTokens ?? 0, locale),
+            )}
           </p>
         </div>
       }

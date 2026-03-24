@@ -64,12 +64,12 @@ function decodeJwtExpiration(token: string): number | null {
   }
 }
 
-function calculateCacheRate(totalTokens: number, cachedTokens: number): number {
-  if (totalTokens <= 0) {
+function calculateCacheRate(inputTokens: number, cachedTokens: number): number {
+  if (inputTokens <= 0) {
     return 0
   }
 
-  return (cachedTokens / totalTokens) * 100
+  return (cachedTokens / inputTokens) * 100
 }
 
 function isSignInResponse(value: unknown): value is SignInResponse {
@@ -118,7 +118,7 @@ export class AxonHubAdminClient {
       tokenStat,
       costStat,
       quotaUsages: quotaUsagesData.apiKeyQuotaUsages,
-      cacheRate: calculateCacheRate(tokenStat?.totalTokens ?? 0, tokenStat?.cachedTokens ?? 0),
+      cacheRate: calculateCacheRate(tokenStat?.inputTokens ?? 0, tokenStat?.cachedTokens ?? 0),
       fetchedAt: Date.now(),
     }
   }

@@ -1,8 +1,10 @@
 import { ConnectionForm } from "@/components/ConnectionForm"
 import { Dashboard } from "@/components/Dashboard"
 import { useAuth } from "@/hooks/useAuth"
+import { useLanguage } from "@/lib/i18n"
 
 function App() {
+  const { t } = useLanguage()
   const {
     connection,
     isConnected,
@@ -16,7 +18,7 @@ function App() {
   if (isRestoring) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-        <p className="text-sm text-muted-foreground">Restoring previous AxonHub session...</p>
+        <p className="text-sm text-muted-foreground">{t.app.restoringSession}</p>
       </div>
     )
   }

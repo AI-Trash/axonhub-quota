@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Express proxy backend for the AxonHub dashboard",
   "main": "dist/index.js",
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
     "build": "tsc",

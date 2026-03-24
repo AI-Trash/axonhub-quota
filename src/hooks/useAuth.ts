@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import type { ConnectionConfig } from "@/api/types"
 import { fetchMetrics } from "@/api/client"
@@ -39,13 +39,6 @@ export function useAuth() {
     error: null,
   })
 
-  const setError = useCallback((error: string | null) => {
-    setState((currentState) => ({
-      ...currentState,
-      error,
-    }))
-  }, [])
-
   const disconnect = useCallback(() => {
     clearStoredApiKey()
     setState({
@@ -60,7 +53,10 @@ export function useAuth() {
     const apiKey = input.apiKey.trim()
 
     if (!apiKey) {
-      setError(t.errors.enterApiKey)
+      setState((currentState) => ({
+        ...currentState,
+        error: t.errors.enterApiKey,
+      }))
       return false
     }
 
@@ -97,7 +93,7 @@ export function useAuth() {
 
       return false
     }
-  }, [setError, t.errors.enterApiKey, t.errors.failedToConnect])
+  }, [t.errors.enterApiKey, t.errors.failedToConnect])
 
   const restore = useCallback(async () => {
     const storedApiKey = loadStoredApiKey()
@@ -139,16 +135,13 @@ export function useAuth() {
     void restore()
   }, [restore])
 
-  const isConnected = useMemo(() => Boolean(state.connection), [state.connection])
-
   return {
     connection: state.connection,
-    isConnected,
+    isConnected: Boolean(state.connection),
     isConnecting: state.isConnecting,
     isRestoring: state.isRestoring,
     error: state.error,
     connect,
     disconnect,
-    clearError: () => setError(null),
   }
 }

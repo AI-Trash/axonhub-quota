@@ -37,16 +37,16 @@ export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionForm
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-5xl items-center px-4 py-10">
-        <Card className="mx-auto w-full max-w-xl border-border/70 shadow-lg shadow-foreground/5">
-          <CardHeader className="space-y-3">
+      <Card className="mx-auto w-full max-w-xl border-border/70 shadow-lg shadow-foreground/5">
+        <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-3">
-            <Badge variant="outline" className="w-fit">{t.connection.badge}</Badge>
+            <Badge variant="outline" className="w-fit">
+              {t.connection.badge}
+            </Badge>
             <LanguageToggle />
           </div>
           <CardTitle className="text-2xl tracking-tight">{t.connection.title}</CardTitle>
-          <CardDescription>
-            {t.connection.description}
-          </CardDescription>
+          <CardDescription>{t.connection.description}</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>

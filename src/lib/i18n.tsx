@@ -25,7 +25,6 @@ const translations = {
     actions: {
       connect: "连接",
       connecting: "连接中…",
-      refresh: "刷新",
       disconnect: "断开连接",
       connected: "已连接",
     },
@@ -45,6 +44,11 @@ const translations = {
     dashboard: {
       lastUpdated: (seconds: number, intervalSeconds: number) =>
         `上次更新：${seconds} 秒前 · 每 ${intervalSeconds} 秒自动刷新`,
+      scopedDescription: "所选 API Key 的时间窗口统计",
+      todayScope: "今日",
+      weekScope: "近 7 天",
+      window: (start: string, end: string) => `窗口：${start} — ${end}`,
+      exactTotal: (total: string) => `精确总量：${total}`,
     },
     tokenUsage: {
       title: "总 Token 用量",
@@ -75,6 +79,11 @@ const translations = {
       description: "缓存 Token 占输入 Token 的比例",
       summary: (cached: string, input: string) => `已缓存 ${cached} / 输入 ${input}`,
     },
+    chart: {
+      title: "7 日 Token 趋势",
+      description: "按日查看输入、输出与缓存 Token 变化",
+      dayLabel: "日期",
+    },
   },
   en: {
     appName: "AxonHub Quota Dashboard",
@@ -89,7 +98,6 @@ const translations = {
     actions: {
       connect: "Connect",
       connecting: "Connecting…",
-      refresh: "Refresh",
       disconnect: "Disconnect",
       connected: "Connected",
     },
@@ -109,6 +117,11 @@ const translations = {
     dashboard: {
       lastUpdated: (seconds: number, intervalSeconds: number) =>
         `Last updated: ${seconds} seconds ago · Auto-refresh every ${intervalSeconds}s`,
+      scopedDescription: "Time-window statistics for the selected API key",
+      todayScope: "Today",
+      weekScope: "Last 7 days",
+      window: (start: string, end: string) => `Window: ${start} — ${end}`,
+      exactTotal: (total: string) => `Exact total: ${total}`,
     },
     tokenUsage: {
       title: "Total token usage",
@@ -138,6 +151,11 @@ const translations = {
       title: "Cache rate",
       description: "Cached tokens compared to input tokens",
       summary: (cached: string, input: string) => `${cached} cached of ${input} input`,
+    },
+    chart: {
+      title: "7-day token trend",
+      description: "Daily input, output, and cached token movement",
+      dayLabel: "Date",
     },
   },
 } as const

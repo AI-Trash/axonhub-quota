@@ -27,7 +27,6 @@ RUN pnpm install --filter ./server... --prod --frozen-lockfile
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server/dist ./server/dist
-COPY --from=builder /app/.env.example ./.env.example
 
 EXPOSE 3001
 

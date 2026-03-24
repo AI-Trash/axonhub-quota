@@ -12,37 +12,74 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
+import type { TooltipContentProps } from "recharts/types/component/Tooltip"
+import type {
+  NameType,
+  ValueType,
+} from "recharts/types/component/DefaultTooltipContent"
 
 interface TokenTrendChartProps {
   data: UsageChartPoint[]
 }
 
+interface ChartTooltipComponentProps extends TooltipContentProps<ValueType, NameType> {
+  locale: "zh" | "en"
+  t: ReturnType<typeof useLanguage>["t"]
+}
+
+function isUsageChartPoint(value: unknown): value is UsageChartPoint {
+  if (!value || typeof value !== "object") {
+    return false
+  }
+
+  const candidate = value as Partial<UsageChartPoint>
+
+  return (
+    typeof candidate.label === "string" &&
+    typeof candidate.totalTokens === "number" &&
+    (candidate.cost === null || typeof candidate.cost === "number") &&
+    typeof candidate.costAvailable === "boolean"
+  )
+}
+
+function ChartTooltip({ active, label, payload, locale, t }: ChartTooltipComponentProps) {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  const point = payload[0]?.payload
+
+  if (!isUsageChartPoint(point)) {
+    return null
+  }
+
+  return (
+    <div
+      className="space-y-1 rounded-md border bg-card px-3 py-2 text-xs shadow-sm"
+      style={{
+        borderColor: "var(--border)",
+        backgroundColor: "var(--card)",
+      }}
+    >
+      <div className="font-medium text-foreground">
+        {t.chart.dayLabel}: {label}
+      </div>
+      <div className="flex justify-between gap-4">
+        <span className="text-muted-foreground">{t.chart.usageSeries}</span>
+        <span className="font-medium tabular-nums">{formatNumber(point.totalTokens, locale)}</span>
+      </div>
+      {point.costAvailable && point.cost !== null ? (
+        <div className="flex justify-between gap-4">
+          <span className="text-muted-foreground">{t.chart.costLabel}</span>
+          <span className="font-medium tabular-nums">{formatCost(point.cost, locale)}</span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function TokenTrendChart({ data }: TokenTrendChartProps) {
   const { locale, t } = useLanguage()
-
-  const formatTooltipValue = (
-    value: number | string | ReadonlyArray<number | string> | undefined,
-  ) => {
-    if (typeof value === "number") {
-      return formatNumber(value, locale)
-    }
-
-    if (typeof value === "string") {
-      const numericValue = Number(value)
-
-      if (!Number.isNaN(numericValue)) {
-        return formatNumber(numericValue, locale)
-      }
-
-      return value
-    }
-
-    if (Array.isArray(value)) {
-      return value.join(", ")
-    }
-
-    return formatNumber(0, locale)
-  }
 
   return (
     <Card className="border-border/70 md:col-span-2 xl:col-span-4">
@@ -63,25 +100,12 @@ export function TokenTrendChart({ data }: TokenTrendChartProps) {
                 width={56}
               />
               <Tooltip
+                content={(props) => <ChartTooltip {...props} locale={locale} t={t} />}
                 contentStyle={{
                   borderColor: "var(--border)",
                   backgroundColor: "var(--card)",
                   borderRadius: "var(--radius)",
                 }}
-                formatter={(value, name, item) => {
-                  const payload = item.payload as UsageChartPoint | undefined
-
-                  if (name === t.chart.usageSeries) {
-                    return [formatTooltipValue(value), name]
-                  }
-
-                  if (!payload?.costAvailable || payload.cost === null) {
-                    return [t.chart.costUnavailable, t.chart.costLabel]
-                  }
-
-                  return [formatCost(payload.cost, locale), t.chart.costLabel]
-                }}
-                labelFormatter={(label) => `${t.chart.dayLabel}: ${label}`}
               />
               <Legend />
               <Bar

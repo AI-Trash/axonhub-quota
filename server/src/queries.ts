@@ -1,0 +1,63 @@
+export const API_KEYS_QUERY = `
+  query ApiKeys {
+    apiKeys {
+      edges {
+        node {
+          id
+          key
+          name
+          status
+        }
+      }
+    }
+  }
+`
+
+export const TOKEN_STATS_BY_API_KEY_QUERY = `
+  query TokenStatsByApiKey {
+    tokenStatsByAPIKey {
+      apiKeyId
+      apiKeyName
+      inputTokens
+      outputTokens
+      cachedTokens
+      reasoningTokens
+      totalTokens
+    }
+  }
+`
+
+export const COST_STATS_BY_API_KEY_QUERY = `
+  query CostStatsByApiKey {
+    costStatsByAPIKey {
+      apiKeyId
+      apiKeyName
+      cost
+    }
+  }
+`
+
+export const API_KEY_QUOTA_USAGES_QUERY = `
+  query ApiKeyQuotaUsages($apiKeyId: ID!) {
+    apiKeyQuotaUsages(apiKeyId: $apiKeyId) {
+      profileName
+      quota {
+        requests
+        totalTokens
+        cost
+        period {
+          type
+        }
+      }
+      window {
+        start
+        end
+      }
+      usage {
+        requestCount
+        totalTokens
+        totalCost
+      }
+    }
+  }
+`

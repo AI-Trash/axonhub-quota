@@ -42,7 +42,6 @@ const translations = {
       apiKeyLabel: "API Key",
       apiKeyPlaceholder: "ahk_live_...",
       emptyKeyHint: "留空 API Key 可直接创建一个新的 external API Key",
-      createQuotaLabel: "创建时总量限额（留空 Key 时生效）",
     },
     dashboard: {
       lastUpdated: (seconds: number, intervalSeconds: number) =>
@@ -121,7 +120,6 @@ const translations = {
       apiKeyLabel: "API key",
       apiKeyPlaceholder: "ahk_live_...",
       emptyKeyHint: "Leave API key empty to create a new external API key",
-      createQuotaLabel: "Total quota on create (used when key is empty)",
     },
     dashboard: {
       lastUpdated: (seconds: number, intervalSeconds: number) =>

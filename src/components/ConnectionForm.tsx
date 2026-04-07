@@ -16,14 +16,10 @@ interface ConnectionFormProps {
   onSubmit: (input: ConnectInput) => Promise<boolean>
 }
 
-interface FormState {
-  apiKey: string
-  createTotalQuota: string
-}
+type FormState = ConnectInput
 
 const INITIAL_FORM_STATE: FormState = {
   apiKey: "",
-  createTotalQuota: "0",
 }
 
 export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionFormProps) {
@@ -32,11 +28,7 @@ export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionForm
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const createTotalQuota = Number(formState.createTotalQuota.trim() || "0")
-    const connected = await onSubmit({
-      apiKey: formState.apiKey,
-      createTotalQuota,
-    })
+    const connected = await onSubmit(formState)
 
     if (connected) {
       setFormState(INITIAL_FORM_STATE)
@@ -76,22 +68,6 @@ export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionForm
                 />
               </div>
               <p className="text-xs text-muted-foreground">{t.connection.emptyKeyHint}</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="create-total-quota">{t.connection.createQuotaLabel}</Label>
-              <Input
-                id="create-total-quota"
-                inputMode="numeric"
-                value={formState.createTotalQuota}
-                onChange={(event) =>
-                  setFormState((currentState) => ({
-                    ...currentState,
-                    createTotalQuota: event.target.value,
-                  }))
-                }
-                placeholder="0"
-              />
             </div>
 
             {error ? (

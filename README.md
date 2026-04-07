@@ -13,6 +13,7 @@ Users only paste an AxonHub API key in the frontend. The backend proxy stores Ax
 - user redeem module (one-time redemption + SQLite persisted balance)
 - admin redeem usage visibility (used / unused / redeemer)
 - login form supports "login / create" (empty API key auto-creates external service-account key)
+- auto-created API key always starts with 0 quota (must redeem to gain balance)
 - in-memory IP rate limit for key creation (1 key per 10 minutes per IP)
 - redeem cards are stored as token hash in SQLite (plain token only returned once at issuance)
 - frontend + backend served from one production image

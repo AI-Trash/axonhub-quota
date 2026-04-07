@@ -8,7 +8,6 @@ const STORAGE_KEY = "axonhub-quota-api-key"
 
 export interface ConnectInput {
   apiKey: string
-  createTotalQuota?: number
 }
 
 interface UseAuthState {
@@ -63,10 +62,7 @@ export function useAuth() {
       let apiKey = typedApiKey
 
       if (!apiKey) {
-        const totalQuota = Number.isInteger(input.createTotalQuota) && input.createTotalQuota !== undefined
-          ? input.createTotalQuota
-          : 0
-        const created = await createSessionApiKey(totalQuota)
+        const created = await createSessionApiKey()
         apiKey = created.apiKey
       }
 

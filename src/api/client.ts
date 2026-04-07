@@ -232,11 +232,11 @@ export async function fetchRedeemBalance(apiKey: string): Promise<RedeemBalanceR
   return data
 }
 
-export async function createSessionApiKey(totalQuota: number): Promise<CreateSessionApiKeyResponse> {
+export async function createSessionApiKey(): Promise<CreateSessionApiKeyResponse> {
   const response = await fetch('/api/session/create-key', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ totalQuota }),
+    body: JSON.stringify({}),
   })
 
   if (!response.ok) {

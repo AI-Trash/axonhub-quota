@@ -231,9 +231,7 @@ export interface RedeemBalanceRequestBody {
   apiKey: string
 }
 
-export interface CreateSessionApiKeyRequestBody {
-  totalQuota: number
-}
+export type CreateSessionApiKeyRequestBody = Record<string, never>
 
 export interface CreatedApiKey {
   id: string

@@ -144,13 +144,7 @@ app.post(
         throw new HttpError(429, "Too many create requests from this IP; try again in 10 minutes")
       }
 
-      const totalQuota = Number(request.body.totalQuota ?? 0)
-
-      if (!Number.isInteger(totalQuota) || totalQuota < 0) {
-        throw new HttpError(400, "totalQuota must be an integer greater than or equal to 0")
-      }
-
-      const created = await client.createExternalApiKey(totalQuota)
+      const created = await client.createExternalApiKey(0)
       createKeyRateLimitByIp.set(requestIp, now)
 
       response.setHeader("Cache-Control", "no-store")

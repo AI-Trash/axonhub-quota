@@ -163,8 +163,134 @@ export interface AppConfig {
   axonhubUrl: string
   adminEmail: string
   adminPassword: string
+  adminKey: string
+  externalProjectId: string
   port: number
   nodeEnv: string
   frontendDistPath: string
   frontendIndexPath: string
+  redeemDbPath: string
+  redeemTokenTtlSeconds: number
+}
+
+export type SessionRole = "admin" | "user"
+
+export interface SessionLoginRequestBody {
+  apiKey: string
+}
+
+export interface SessionLoginResponse {
+  role: SessionRole
+}
+
+export interface CreateRedeemRequestBody {
+  amount: number
+}
+
+export interface CreateRedeemResponse {
+  redeem: RedeemRecord
+  token: string
+}
+
+export interface RedeemRecord {
+  jti: string
+  amount: number
+  issuedAt: number
+  expiresAt: number
+  usedAt: number | null
+  usedByApiKey: string | null
+}
+
+export interface RedeemSummaryRequestBody {
+  apiKey: string
+  limit?: number
+}
+
+export interface RedeemSummaryResponse {
+  redeems: RedeemRecord[]
+  usedCount: number
+  totalCount: number
+}
+
+export interface RedeemCardRequestBody {
+  apiKey: string
+  redeem: string
+}
+
+export interface RedeemCardResponse {
+  amount: number
+  balance: number
+  redeemedAt: number
+}
+
+export interface RedeemBalanceResponse {
+  balance: number
+}
+
+export interface RedeemBalanceRequestBody {
+  apiKey: string
+}
+
+export interface CreateSessionApiKeyRequestBody {
+  totalQuota: number
+}
+
+export interface CreatedApiKey {
+  id: string
+  key: string
+  name: string
+  projectId: string
+  totalQuota: number
+}
+
+export interface CreateSessionApiKeyResponse {
+  id: string
+  apiKey: string
+  name: string
+  projectId: string
+  totalQuota: number
+}
+
+export interface CreateApiKeyMutationData {
+  createAPIKey: {
+    id: string
+    key: string
+    name: string
+  }
+}
+
+export interface CreateApiKeyMutationVariables {
+  input: {
+    name: string
+    projectID: string
+    type: "service_account"
+    scopes: string[]
+  }
+}
+
+export interface UpdateApiKeyProfilesMutationData {
+  updateAPIKeyProfiles: {
+    id: string
+  }
+}
+
+export interface UpdateApiKeyProfilesMutationVariables {
+  id: string
+  input: {
+    activeProfile: string
+    profiles: Array<{
+      name: string
+      modelMappings: unknown[]
+      channelIDs: number[]
+      channelTags: string[]
+      channelTagsMatchMode: "any"
+      modelIDs: string[]
+      quota: {
+        totalTokens: number
+        period: {
+          type: "all_time"
+        }
+      }
+    }>
+  }
 }

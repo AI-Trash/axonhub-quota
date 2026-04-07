@@ -59,3 +59,21 @@ export const API_KEY_TOKEN_USAGE_STATS_QUERY = `
     }
   }
 `
+
+export const CREATE_API_KEY_MUTATION = `
+  mutation CreateApiKey($input: CreateAPIKeyInput!) {
+    createAPIKey(input: $input) {
+      id
+      key
+      name
+    }
+  }
+`
+
+export const UPDATE_API_KEY_PROFILES_MUTATION = `
+  mutation UpdateApiKeyProfiles($id: ID!, $input: UpdateAPIKeyProfilesInput!) {
+    updateAPIKeyProfiles(id: $id, input: $input) {
+      id
+    }
+  }
+`

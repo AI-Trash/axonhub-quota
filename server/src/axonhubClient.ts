@@ -1,9 +1,13 @@
+import crypto from "node:crypto"
+
 import { HttpError } from "./errors"
 import {
   API_KEYS_QUERY,
   API_KEY_QUOTA_USAGES_QUERY,
   API_KEY_TOKEN_USAGE_STATS_QUERY,
+  CREATE_API_KEY_MUTATION,
   COST_STATS_BY_API_KEY_QUERY,
+  UPDATE_API_KEY_PROFILES_MUTATION,
 } from "./queries"
 import type {
   APIKeyTokenUsageStatsInput,
@@ -12,6 +16,8 @@ import type {
   ApiKeysQueryData,
   ApiKeysQueryVariables,
   AppConfig,
+  CreateApiKeyMutationData,
+  CreateApiKeyMutationVariables,
   CostStatsByApiKeyQueryData,
   DashboardMetrics,
   GraphQLError,
@@ -19,6 +25,8 @@ import type {
   GraphQLResponse,
   SignInRequest,
   SignInResponse,
+  UpdateApiKeyProfilesMutationData,
+  UpdateApiKeyProfilesMutationVariables,
   UsageChartPoint,
   UsageSummary,
   ScopedUsageSummary,
@@ -108,7 +116,7 @@ function formatDateKey(date: Date, timezone: string): string {
   }).format(date)
 }
 
-function getDateWindow(days: number, timezone: string): { start: Date; end: Date } {
+function getDateWindow(days: number): { start: Date; end: Date } {
   const now = new Date()
   const end = new Date(now)
   const start = new Date(now)
@@ -158,6 +166,68 @@ export class AxonHubAdminClient {
 
   constructor(private readonly config: AppConfig) {}
 
+  async createExternalApiKey(totalQuota: number): Promise<{
+    id: string
+    key: string
+    name: string
+    projectId: string
+    totalQuota: number
+  }> {
+    if (!Number.isInteger(totalQuota) || totalQuota < 0) {
+      throw new HttpError(400, "totalQuota must be an integer greater than or equal to 0")
+    }
+
+    const apiKeyName = `external-${crypto.randomUUID().slice(0, 8)}`
+
+    const created = await this.graphqlRequest<CreateApiKeyMutationData, CreateApiKeyMutationVariables>(
+      CREATE_API_KEY_MUTATION,
+      {
+        input: {
+          name: apiKeyName,
+          projectID: this.config.externalProjectId,
+          type: "service_account",
+          scopes: [],
+        },
+      },
+    )
+
+    if (totalQuota > 0) {
+      await this.graphqlRequest<UpdateApiKeyProfilesMutationData, UpdateApiKeyProfilesMutationVariables>(
+        UPDATE_API_KEY_PROFILES_MUTATION,
+        {
+          id: created.createAPIKey.id,
+          input: {
+            activeProfile: "default",
+            profiles: [
+              {
+                name: "default",
+                modelMappings: [],
+                channelIDs: [],
+                channelTags: [],
+                channelTagsMatchMode: "any",
+                modelIDs: [],
+                quota: {
+                  totalTokens: totalQuota,
+                  period: {
+                    type: "all_time",
+                  },
+                },
+              },
+            ],
+          },
+        },
+      )
+    }
+
+    return {
+      id: created.createAPIKey.id,
+      key: created.createAPIKey.key,
+      name: created.createAPIKey.name,
+      projectId: this.config.externalProjectId,
+      totalQuota,
+    }
+  }
+
   async fetchDashboardMetrics(apiKey: string): Promise<DashboardMetrics> {
     const apiKeysData = await this.graphqlRequest<ApiKeysQueryData, ApiKeysQueryVariables>(API_KEYS_QUERY, {
       first: 500,
@@ -169,8 +239,8 @@ export class AxonHubAdminClient {
     }
 
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
-    const todayWindow = getDateWindow(1, timezone)
-    const weekWindow = getDateWindow(7, timezone)
+    const todayWindow = getDateWindow(1)
+    const weekWindow = getDateWindow(7)
     const dailyWindows = Array.from({ length: 7 }, (_, index) => {
       const daysAgo = 6 - index
       const date = new Date()

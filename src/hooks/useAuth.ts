@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from "react"
 
 import type { ConnectionConfig } from "@/api/types"
-import { fetchMetrics } from "@/api/client"
+import { createSessionApiKey, loginSession } from "@/api/client"
 import { useLanguage } from "@/lib/i18n"
 
 const STORAGE_KEY = "axonhub-quota-api-key"
 
 export interface ConnectInput {
   apiKey: string
+  createTotalQuota?: number
 }
 
 interface UseAuthState {
@@ -50,15 +51,7 @@ export function useAuth() {
   }, [])
 
   const connect = useCallback(async (input: ConnectInput) => {
-    const apiKey = input.apiKey.trim()
-
-    if (!apiKey) {
-      setState((currentState) => ({
-        ...currentState,
-        error: t.errors.enterApiKey,
-      }))
-      return false
-    }
+    const typedApiKey = input.apiKey.trim()
 
     setState((currentState) => ({
       ...currentState,
@@ -67,10 +60,21 @@ export function useAuth() {
     }))
 
     try {
-      await fetchMetrics(apiKey)
+      let apiKey = typedApiKey
+
+      if (!apiKey) {
+        const totalQuota = Number.isInteger(input.createTotalQuota) && input.createTotalQuota !== undefined
+          ? input.createTotalQuota
+          : 0
+        const created = await createSessionApiKey(totalQuota)
+        apiKey = created.apiKey
+      }
+
+      const session = await loginSession(apiKey)
 
       const connection: ConnectionConfig = {
         apiKey,
+        role: session.role,
       }
 
       saveStoredApiKey(apiKey)
@@ -93,7 +97,7 @@ export function useAuth() {
 
       return false
     }
-  }, [t.errors.enterApiKey, t.errors.failedToConnect])
+  }, [t.errors.failedToConnect])
 
   const restore = useCallback(async () => {
     const storedApiKey = loadStoredApiKey()
@@ -107,11 +111,12 @@ export function useAuth() {
     }
 
     try {
-      await fetchMetrics(storedApiKey)
+      const session = await loginSession(storedApiKey)
 
       setState({
         connection: {
           apiKey: storedApiKey,
+          role: session.role,
         },
         isConnecting: false,
         isRestoring: false,

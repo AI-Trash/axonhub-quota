@@ -2,9 +2,11 @@ import { lazy, Suspense, useEffect, useState } from "react"
 import { Circle, LogOut } from "lucide-react"
 
 import type { ConnectionConfig, ScopedUsageSummary } from "@/api/types"
+import { ApiKeySecret } from "@/components/ApiKeySecret"
 import { CacheRateCard } from "@/components/CacheRateCard"
 import { LanguageToggle } from "@/components/LanguageToggle"
 import { QuotaCard } from "@/components/QuotaCard"
+import { RedeemPanel } from "@/components/RedeemPanel"
 import { ScopedStatsCard } from "@/components/ScopedStatsCard"
 import { TokenUsageCard } from "@/components/TokenUsageCard"
 import { Badge } from "@/components/ui/badge"
@@ -92,11 +94,12 @@ export function Dashboard({ connection, onDisconnect }: DashboardProps) {
     <div className="min-h-dvh bg-background">
       <header className="border-b border-border/70 bg-card/60 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Circle className="size-2 fill-emerald-500 text-emerald-500" />
               <Badge variant="outline">{t.actions.connected}</Badge>
             </div>
+            <ApiKeySecret apiKey={connection.apiKey} label="当前 API Key" />
             <p className="text-sm text-muted-foreground">
               {t.dashboard.lastUpdated(liveElapsedSeconds, Math.floor(refreshIntervalMs / 1000))}
             </p>
@@ -132,6 +135,7 @@ export function Dashboard({ connection, onDisconnect }: DashboardProps) {
             <Suspense fallback={<ChartSkeleton />}>
               <TokenTrendChart data={metrics?.chart.dailyUsage ?? []} />
             </Suspense>
+            <RedeemPanel connection={connection} />
           </>
         )}
       </main>

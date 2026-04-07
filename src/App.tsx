@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react"
 
+import { AdminPanel } from "@/components/AdminPanel"
 import { ConnectionForm } from "@/components/ConnectionForm"
 import { useAuth } from "@/hooks/useAuth"
 import { useLanguage } from "@/lib/i18n"
@@ -31,6 +32,10 @@ function App() {
 
   if (!isConnected || !connection) {
     return <ConnectionForm isConnecting={isConnecting} error={error} onSubmit={connect} />
+  }
+
+  if (connection.role === "admin") {
+    return <AdminPanel connection={connection} onDisconnect={disconnect} />
   }
 
   return (

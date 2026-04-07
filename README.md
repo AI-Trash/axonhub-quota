@@ -9,6 +9,12 @@ Users only paste an AxonHub API key in the frontend. The backend proxy stores Ax
 - default Chinese UI with Chinese / English switching
 - auto-refreshing quota dashboard
 - token usage, total cost, quota usage, and cache rate (`cached / input`)
+- admin card issuance module (signed redeem JWT with UUID `jti`)
+- user redeem module (one-time redemption + SQLite persisted balance)
+- admin redeem usage visibility (used / unused / redeemer)
+- login form supports "login / create" (empty API key auto-creates external service-account key)
+- in-memory IP rate limit for key creation (1 key per 10 minutes per IP)
+- redeem cards are stored as token hash in SQLite (plain token only returned once at issuance)
 - frontend + backend served from one production image
 - GitHub Actions publishes Docker images to GHCR
 
@@ -39,13 +45,24 @@ Create a local `.env` file in the project root for the backend server.
 AXONHUB_URL=https://your-axonhub-instance.example.com
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=your-admin-password
+ADMIN_KEY=your-admin-api-key
+EXTERNAL_PROJECT_ID=your-external-project-id
 PORT=3001
+REDEEM_DB_PATH=./server/data/redeem.sqlite
+REDEEM_TOKEN_TTL_SECONDS=2592000
 ```
 
 ### Notes
 
 - `AXONHUB_URL` must point to the AxonHub server reachable by the proxy backend.
 - `ADMIN_EMAIL` / `ADMIN_PASSWORD` are used only by the backend proxy.
+- `ADMIN_KEY` is the preconfigured admin login key for card issuance features.
+- `EXTERNAL_PROJECT_ID` is the target project for admin-created API keys (forced by backend env config).
+- API key creation from login page always uses `EXTERNAL_PROJECT_ID` and `external-` name prefix.
+- backend derives a private signing key from `ADMIN_KEY` (HKDF-SHA256) for redeem JWT signing.
+- `REDEEM_DB_PATH` controls SQLite file location for redeem records and balances.
+- `REDEEM_TOKEN_TTL_SECONDS` controls redeem token expiration (default: 30 days).
+- admin/user key validation and redeem APIs no longer pass API key in URL query string.
 - The frontend never stores or submits admin credentials.
 
 ## Local development

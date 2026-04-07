@@ -16,10 +16,14 @@ interface ConnectionFormProps {
   onSubmit: (input: ConnectInput) => Promise<boolean>
 }
 
-type FormState = ConnectInput
+interface FormState {
+  apiKey: string
+  createTotalQuota: string
+}
 
 const INITIAL_FORM_STATE: FormState = {
   apiKey: "",
+  createTotalQuota: "0",
 }
 
 export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionFormProps) {
@@ -28,7 +32,11 @@ export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionForm
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const connected = await onSubmit(formState)
+    const createTotalQuota = Number(formState.createTotalQuota.trim() || "0")
+    const connected = await onSubmit({
+      apiKey: formState.apiKey,
+      createTotalQuota,
+    })
 
     if (connected) {
       setFormState(INITIAL_FORM_STATE)
@@ -65,9 +73,25 @@ export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionForm
                   }
                   className="pl-9"
                   placeholder={t.connection.apiKeyPlaceholder}
-                  required
                 />
               </div>
+              <p className="text-xs text-muted-foreground">{t.connection.emptyKeyHint}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-total-quota">{t.connection.createQuotaLabel}</Label>
+              <Input
+                id="create-total-quota"
+                inputMode="numeric"
+                value={formState.createTotalQuota}
+                onChange={(event) =>
+                  setFormState((currentState) => ({
+                    ...currentState,
+                    createTotalQuota: event.target.value,
+                  }))
+                }
+                placeholder="0"
+              />
             </div>
 
             {error ? (
@@ -77,7 +101,7 @@ export function ConnectionForm({ isConnecting, error, onSubmit }: ConnectionForm
             ) : null}
 
             <Button disabled={isConnecting} type="submit" className="w-full">
-              {isConnecting ? t.actions.connecting : t.actions.connect}
+              {isConnecting ? t.actions.connecting : t.actions.connectOrCreate}
             </Button>
           </form>
         </CardContent>

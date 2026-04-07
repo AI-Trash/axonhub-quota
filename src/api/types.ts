@@ -64,4 +64,47 @@ export interface DashboardMetrics {
 
 export interface ConnectionConfig {
   apiKey: string
+  role: "admin" | "user"
+}
+
+export interface SessionLoginResponse {
+  role: "admin" | "user"
+}
+
+export interface RedeemRecord {
+  jti: string
+  amount: number
+  issuedAt: number
+  expiresAt: number
+  usedAt: number | null
+  usedByApiKey: string | null
+}
+
+export interface CreateRedeemResponse {
+  redeem: RedeemRecord
+  token: string
+}
+
+export interface RedeemSummaryResponse {
+  redeems: RedeemRecord[]
+  usedCount: number
+  totalCount: number
+}
+
+export interface RedeemCardResponse {
+  amount: number
+  balance: number
+  redeemedAt: number
+}
+
+export interface RedeemBalanceResponse {
+  balance: number
+}
+
+export interface CreateSessionApiKeyResponse {
+  id: string
+  apiKey: string
+  name: string
+  projectId: string
+  totalQuota: number
 }

@@ -191,33 +191,39 @@ export class AxonHubAdminClient {
       },
     )
 
-    if (totalQuota > 0) {
-      await this.graphqlRequest<UpdateApiKeyProfilesMutationData, UpdateApiKeyProfilesMutationVariables>(
-        UPDATE_API_KEY_PROFILES_MUTATION,
-        {
-          id: created.createAPIKey.id,
-          input: {
-            activeProfile: "default",
-            profiles: [
-              {
-                name: "default",
-                modelMappings: [],
-                channelIDs: [],
-                channelTags: [],
-                channelTagsMatchMode: "any",
-                modelIDs: [],
-                quota: {
-                  totalTokens: totalQuota,
-                  period: {
-                    type: "all_time",
+    await this.graphqlRequest<UpdateApiKeyProfilesMutationData, UpdateApiKeyProfilesMutationVariables>(
+      UPDATE_API_KEY_PROFILES_MUTATION,
+      {
+        id: created.createAPIKey.id,
+        input: {
+          activeProfile: "default",
+          profiles: [
+            {
+              name: "default",
+              modelMappings: [],
+              channelIDs: [],
+              channelTags: [],
+              channelTagsMatchMode: "any",
+              modelIDs: [],
+              loadBalanceStrategy: null,
+              quota: totalQuota > 0
+                ? {
+                    totalTokens: totalQuota,
+                    period: {
+                      type: "all_time",
+                    },
+                  }
+                : {
+                    cost: 0,
+                    period: {
+                      type: "all_time",
+                    },
                   },
-                },
-              },
-            ],
-          },
+            },
+          ],
         },
-      )
-    }
+      },
+    )
 
     return {
       id: created.createAPIKey.id,

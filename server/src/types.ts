@@ -283,8 +283,10 @@ export interface UpdateApiKeyProfilesMutationVariables {
       channelTags: string[]
       channelTagsMatchMode: "any"
       modelIDs: string[]
+      loadBalanceStrategy?: string | null
       quota: {
-        totalTokens: number
+        totalTokens?: number
+        cost?: number
         period: {
           type: "all_time"
         }

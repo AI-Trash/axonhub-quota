@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 
-import { HttpError } from "./errors"
+import { HttpError, isHttpError } from "./errors"
 import {
   API_KEYS_QUERY,
   API_KEY_QUOTA_USAGES_QUERY,
@@ -46,6 +46,7 @@ interface TokenUsageVariables {
 }
 
 type UnknownRecord = Record<string, unknown>
+const API_KEY_NAME_MAX_RETRIES = 5
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null
@@ -166,6 +167,10 @@ export class AxonHubAdminClient {
 
   constructor(private readonly config: AppConfig) {}
 
+  private generateExternalApiKeyName(): string {
+    return `external-${crypto.randomUUID().replaceAll("-", "")}`
+  }
+
   async createExternalApiKey(totalQuota: number): Promise<{
     id: string
     key: string
@@ -177,19 +182,36 @@ export class AxonHubAdminClient {
       throw new HttpError(400, "totalQuota must be an integer greater than or equal to 0")
     }
 
-    const apiKeyName = `external-${crypto.randomUUID().slice(0, 8)}`
+    let created: CreateApiKeyMutationData | null = null
 
-    const created = await this.graphqlRequest<CreateApiKeyMutationData, CreateApiKeyMutationVariables>(
-      CREATE_API_KEY_MUTATION,
-      {
-        input: {
-          name: apiKeyName,
-          projectID: this.config.externalProjectId,
-          type: "service_account",
-          scopes: [],
-        },
-      },
-    )
+    for (let attempt = 1; attempt <= API_KEY_NAME_MAX_RETRIES; attempt += 1) {
+      const apiKeyName = this.generateExternalApiKeyName()
+
+      try {
+        created = await this.graphqlRequest<CreateApiKeyMutationData, CreateApiKeyMutationVariables>(
+          CREATE_API_KEY_MUTATION,
+          {
+            input: {
+              name: apiKeyName,
+              projectID: this.config.externalProjectId,
+              type: "user",
+              scopes: [],
+            },
+          },
+        )
+        break
+      } catch (error) {
+        if (isHttpError(error) && error.statusCode === 400 && /name/i.test(error.message) && attempt < API_KEY_NAME_MAX_RETRIES) {
+          continue
+        }
+
+        throw error
+      }
+    }
+
+    if (!created) {
+      throw new HttpError(500, "Failed to create API key after retrying name collisions")
+    }
 
     await this.graphqlRequest<UpdateApiKeyProfilesMutationData, UpdateApiKeyProfilesMutationVariables>(
       UPDATE_API_KEY_PROFILES_MUTATION,

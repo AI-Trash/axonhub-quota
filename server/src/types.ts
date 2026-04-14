@@ -261,7 +261,7 @@ export interface CreateApiKeyMutationVariables {
   input: {
     name: string
     projectID: string
-    type: "service_account"
+    type: "user"
     scopes: string[]
   }
 }

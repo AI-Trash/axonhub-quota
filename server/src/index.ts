@@ -14,6 +14,8 @@ import type {
   CreateSessionApiKeyResponse,
   CreateRedeemRequestBody,
   CreateRedeemResponse,
+  RedeemControlRequestBody,
+  RedeemControlResponse,
   DashboardMetrics,
   ErrorResponse,
   HealthResponse,
@@ -178,32 +180,88 @@ app.post(
       assertAdmin(apiKey)
 
       const amount = Number(request.body.amount)
+      const quantityValue = request.body.quantity ?? 1
+      const quantity = Number(quantityValue)
 
       if (!Number.isInteger(amount) || amount <= 0) {
         throw new HttpError(400, "amount must be a positive integer")
       }
 
-      const signed = signRedeemToken({
-        amount,
-        ttlSeconds: config.redeemTokenTtlSeconds,
-        issuer: REDEEM_ISSUER,
-        audience: REDEEM_AUDIENCE,
-        signingKey: redeemSigningKey,
-      })
+      if (!Number.isInteger(quantity) || quantity <= 0 || quantity > 100) {
+        throw new HttpError(400, "quantity must be an integer between 1 and 100")
+      }
 
-      const redeem = redeemStore.insertRedeem({
-        jti: signed.claims.jti,
-        amount: signed.claims.amount,
-        issuedAt: signed.claims.iat * 1000,
-        expiresAt: signed.claims.exp * 1000,
-        usedAt: null,
-        usedByApiKey: null,
-      }, signed.token)
+      const items: CreateRedeemResponse["items"] = []
+
+      for (let index = 0; index < quantity; index += 1) {
+        const signed = signRedeemToken({
+          amount,
+          ttlSeconds: config.redeemTokenTtlSeconds,
+          issuer: REDEEM_ISSUER,
+          audience: REDEEM_AUDIENCE,
+          signingKey: redeemSigningKey,
+        })
+
+        const redeem = redeemStore.insertRedeem({
+          jti: signed.claims.jti,
+          amount: signed.claims.amount,
+          issuedAt: signed.claims.iat * 1000,
+          expiresAt: signed.claims.exp * 1000,
+          usedAt: null,
+          usedByApiKey: null,
+          disabledAt: null,
+          disabledByApiKey: null,
+        }, signed.token)
+
+        items.push({
+          redeem,
+          token: signed.token,
+        })
+      }
 
       response.setHeader("Cache-Control", "no-store")
       response.status(201).json({
+        items,
+        createdCount: items.length,
+      })
+    } catch (error) {
+      if (isHttpError(error)) {
+        response.status(error.statusCode).json({ error: error.message })
+        return
+      }
+
+      console.error("Unexpected server error", error)
+      response.status(500).json({ error: "Internal server error" })
+    }
+  },
+)
+
+app.post(
+  "/api/admin/redeems/control",
+  (
+    request: Request<Record<string, never>, RedeemControlResponse | ErrorResponse, RedeemControlRequestBody>,
+    response: Response<RedeemControlResponse | ErrorResponse>,
+  ) => {
+    try {
+      const apiKey = readApiKey(request.body.apiKey)
+      assertAdmin(apiKey)
+
+      const jti = typeof request.body.jti === "string" ? request.body.jti.trim() : ""
+      if (!jti) {
+        throw new HttpError(400, "jti is required")
+      }
+
+      const action = request.body.action
+      if (action !== "disable" && action !== "enable" && action !== "delete") {
+        throw new HttpError(400, "action must be one of disable, enable, delete")
+      }
+
+      const redeem = redeemStore.updateRedeemControl(jti, action, apiKey, Date.now())
+
+      response.setHeader("Cache-Control", "no-store")
+      response.json({
+        action,
         redeem,
-        token: signed.token,
       })
     } catch (error) {
       if (isHttpError(error)) {

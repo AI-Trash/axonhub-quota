@@ -185,11 +185,17 @@ export interface SessionLoginResponse {
 
 export interface CreateRedeemRequestBody {
   amount: number
+  quantity?: number
+}
+
+export interface CreatedRedeemToken {
+  redeem: RedeemRecord
+  token: string
 }
 
 export interface CreateRedeemResponse {
-  redeem: RedeemRecord
-  token: string
+  items: CreatedRedeemToken[]
+  createdCount: number
 }
 
 export interface RedeemRecord {
@@ -199,6 +205,21 @@ export interface RedeemRecord {
   expiresAt: number
   usedAt: number | null
   usedByApiKey: string | null
+  disabledAt: number | null
+  disabledByApiKey: string | null
+}
+
+export type RedeemControlAction = "disable" | "enable" | "delete"
+
+export interface RedeemControlRequestBody {
+  apiKey: string
+  jti: string
+  action: RedeemControlAction
+}
+
+export interface RedeemControlResponse {
+  action: RedeemControlAction
+  redeem: RedeemRecord | null
 }
 
 export interface RedeemSummaryRequestBody {

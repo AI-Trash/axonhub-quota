@@ -15,6 +15,8 @@ interface RedeemRow {
   expires_at: number
   used_at: number | null
   used_by_api_key: string | null
+  disabled_at: number | null
+  disabled_by_api_key: string | null
 }
 
 interface CreditRow {
@@ -30,6 +32,8 @@ function toRedeemRecord(row: RedeemRow): RedeemRecord {
     expiresAt: row.expires_at,
     usedAt: row.used_at,
     usedByApiKey: row.used_by_api_key,
+    disabledAt: row.disabled_at,
+    disabledByApiKey: row.disabled_by_api_key,
   }
 }
 
@@ -62,10 +66,13 @@ export class RedeemStore {
         issued_at INTEGER NOT NULL,
         expires_at INTEGER NOT NULL,
         used_at INTEGER,
-        used_by_api_key TEXT
+        used_by_api_key TEXT,
+        disabled_at INTEGER,
+        disabled_by_api_key TEXT
       );
 
       CREATE INDEX IF NOT EXISTS idx_redeems_used_at ON redeems(used_at);
+      CREATE INDEX IF NOT EXISTS idx_redeems_disabled_at ON redeems(disabled_at);
 
       CREATE TABLE IF NOT EXISTS credits (
         api_key TEXT PRIMARY KEY,
@@ -77,6 +84,8 @@ export class RedeemStore {
       .prepare<[], { name: string }>("PRAGMA table_info(redeems)")
       .all()
     const hasTokenHashColumn = columns.some((column) => column.name === "token_hash")
+    const hasDisabledAtColumn = columns.some((column) => column.name === "disabled_at")
+    const hasDisabledByApiKeyColumn = columns.some((column) => column.name === "disabled_by_api_key")
 
     if (!hasTokenHashColumn) {
       this.db.exec("ALTER TABLE redeems ADD COLUMN token_hash TEXT")
@@ -97,6 +106,16 @@ export class RedeemStore {
 
       this.db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_redeems_token_hash ON redeems(token_hash)")
     }
+
+    if (!hasDisabledAtColumn) {
+      this.db.exec("ALTER TABLE redeems ADD COLUMN disabled_at INTEGER")
+    }
+
+    if (!hasDisabledByApiKeyColumn) {
+      this.db.exec("ALTER TABLE redeems ADD COLUMN disabled_by_api_key TEXT")
+    }
+
+    this.db.exec("CREATE INDEX IF NOT EXISTS idx_redeems_disabled_at ON redeems(disabled_at)")
   }
 
   insertRedeem(record: RedeemRecord, token: string): RedeemRecord {
@@ -128,7 +147,7 @@ export class RedeemStore {
     const cappedLimit = Math.max(1, Math.min(limit, 200))
     const statement = this.db.prepare<[number], RedeemRow>(
       `
-        SELECT jti, amount, token_hash, issued_at, expires_at, used_at, used_by_api_key
+        SELECT jti, amount, token_hash, issued_at, expires_at, used_at, used_by_api_key, disabled_at, disabled_by_api_key
         FROM redeems
         ORDER BY issued_at DESC
         LIMIT ?
@@ -160,7 +179,7 @@ export class RedeemStore {
       const redeemRow = this.db
         .prepare<[string], RedeemRow>(
           `
-            SELECT jti, amount, token_hash, issued_at, expires_at, used_at, used_by_api_key
+            SELECT jti, amount, token_hash, issued_at, expires_at, used_at, used_by_api_key, disabled_at, disabled_by_api_key
             FROM redeems
             WHERE token_hash = ?
           `,
@@ -185,6 +204,10 @@ export class RedeemStore {
 
       if (redeemRow.used_at !== null) {
         throw new HttpError(409, "Redeem token has already been used")
+      }
+
+      if (redeemRow.disabled_at !== null) {
+        throw new HttpError(409, "Redeem token is disabled")
       }
 
       const markUsedResult = this.db
@@ -229,5 +252,75 @@ export class RedeemStore {
       .prepare<[string], CreditRow>("SELECT api_key, balance FROM credits WHERE api_key = ?")
       .get(apiKey)
     return row?.balance ?? 0
+  }
+
+  updateRedeemControl(jti: string, action: "disable" | "enable" | "delete", adminApiKey: string, nowMs: number): RedeemRecord | null {
+    const actionTransaction = this.db.transaction((): RedeemRecord | null => {
+      const current = this.db
+        .prepare<[string], RedeemRow>(
+          `
+            SELECT jti, amount, token_hash, issued_at, expires_at, used_at, used_by_api_key, disabled_at, disabled_by_api_key
+            FROM redeems
+            WHERE jti = ?
+          `,
+        )
+        .get(jti)
+
+      if (!current) {
+        throw new HttpError(404, "Redeem record not found")
+      }
+
+      if (action === "delete") {
+        const deleteResult = this.db.prepare("DELETE FROM redeems WHERE jti = ?").run(jti)
+        if (deleteResult.changes !== 1) {
+          throw new HttpError(500, "Failed to delete redeem record")
+        }
+        return null
+      }
+
+      if (action === "disable") {
+        if (current.used_at !== null) {
+          throw new HttpError(409, "Used redeem token cannot be disabled")
+        }
+
+        this.db
+          .prepare(
+            `
+              UPDATE redeems
+              SET disabled_at = ?, disabled_by_api_key = ?
+              WHERE jti = ?
+            `,
+          )
+          .run(nowMs, adminApiKey, jti)
+      } else {
+        this.db
+          .prepare(
+            `
+              UPDATE redeems
+              SET disabled_at = NULL, disabled_by_api_key = NULL
+              WHERE jti = ?
+            `,
+          )
+          .run(jti)
+      }
+
+      const updated = this.db
+        .prepare<[string], RedeemRow>(
+          `
+            SELECT jti, amount, token_hash, issued_at, expires_at, used_at, used_by_api_key, disabled_at, disabled_by_api_key
+            FROM redeems
+            WHERE jti = ?
+          `,
+        )
+        .get(jti)
+
+      if (!updated) {
+        throw new HttpError(500, "Failed to update redeem record")
+      }
+
+      return toRedeemRecord(updated)
+    })
+
+    return actionTransaction()
   }
 }

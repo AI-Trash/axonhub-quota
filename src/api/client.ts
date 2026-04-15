@@ -1,5 +1,7 @@
 import type {
   CreateSessionApiKeyResponse,
+  RedeemControlAction,
+  RedeemControlResponse,
   CreateRedeemResponse,
   DashboardMetrics,
   RedeemBalanceResponse,
@@ -77,11 +79,28 @@ function isRedeemRecord(value: unknown) {
     && typeof value.expiresAt === "number"
     && (typeof value.usedAt === "number" || value.usedAt === null)
     && (typeof value.usedByApiKey === "string" || value.usedByApiKey === null)
+    && (typeof value.disabledAt === "number" || value.disabledAt === null)
+    && (typeof value.disabledByApiKey === "string" || value.disabledByApiKey === null)
   )
 }
 
 function isCreateRedeemResponse(value: unknown): value is CreateRedeemResponse {
-  return isObject(value) && isRedeemRecord(value.redeem) && typeof value.token === "string"
+  return (
+    isObject(value)
+    && Array.isArray(value.items)
+    && value.items.every((item) => isObject(item) && isRedeemRecord(item.redeem) && typeof item.token === "string")
+    && typeof value.createdCount === "number"
+  )
+}
+
+function isRedeemControlResponse(value: unknown): value is RedeemControlResponse {
+  if (!isObject(value)) {
+    return false
+  }
+
+  const validAction = value.action === "disable" || value.action === "enable" || value.action === "delete"
+  const validRedeem = value.redeem === null || isRedeemRecord(value.redeem)
+  return validAction && validRedeem
 }
 
 function isRedeemSummaryResponse(value: unknown): value is RedeemSummaryResponse {
@@ -152,11 +171,11 @@ export async function loginSession(apiKey: string): Promise<SessionLoginResponse
   return data
 }
 
-export async function createRedeem(apiKey: string, amount: number): Promise<CreateRedeemResponse> {
+export async function createRedeem(apiKey: string, amount: number, quantity: number): Promise<CreateRedeemResponse> {
   const response = await fetch('/api/admin/redeems', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey, amount }),
+    body: JSON.stringify({ apiKey, amount, quantity }),
   })
 
   if (!response.ok) {
@@ -167,6 +186,30 @@ export async function createRedeem(apiKey: string, amount: number): Promise<Crea
 
   if (!isCreateRedeemResponse(data)) {
     throw new Error("Invalid create redeem response")
+  }
+
+  return data
+}
+
+export async function controlRedeem(
+  apiKey: string,
+  jti: string,
+  action: RedeemControlAction,
+): Promise<RedeemControlResponse> {
+  const response = await fetch('/api/admin/redeems/control', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey, jti, action }),
+  })
+
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+
+  const data: unknown = await response.json()
+
+  if (!isRedeemControlResponse(data)) {
+    throw new Error("Invalid redeem control response")
   }
 
   return data
